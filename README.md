@@ -66,6 +66,51 @@ cp .env.example .env  # If available, or create manually
 
 Edit `.env` with your configuration:
 
+### 5. Deploy to /opt/voiceonly
+
+1) Copy repository to `/opt/voiceonly` and set owner:
+
+```bash
+sudo mkdir -p /opt/voiceonly
+sudo cp -r . /opt/voiceonly
+sudo chown -R $USER:$USER /opt/voiceonly
+```
+
+2) Create virtualenv in `/opt/voiceonly`:
+
+```bash
+cd /opt/voiceonly
+python3 -m venv venv
+source venv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
+
+3) Ensure `.env` is present at `/opt/voiceonly/.env` and updated.
+
+4) Create systemd unit (if non esiste già):
+
+```bash
+sudo cp /opt/voiceonly/voiceonly.service /etc/systemd/system/
+```
+
+5) Ricarica systemd e avvia servizio:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable voiceonly.service
+sudo systemctl start voiceonly.service
+sudo systemctl status voiceonly.service
+```
+
+6) Se usi MongoDB in sistema, assicurati sia avviato:
+
+```bash
+sudo systemctl enable mongod --now
+```
+
+7) Accedi all’app su `http://localhost:8000` e dashboard su `/admin`
+
 ```env
 # Debug mode (true/false)
 DEBUG_MODE=False

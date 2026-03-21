@@ -1,0 +1,200 @@
+<!-- app/templates/admin/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - VoiceOnly{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Canali Attivi</h3>
+        <div class="number">{{ stats.active_channels }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Video Scaricati</h3>
+        <div class="number">{{ stats.total_videos }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Spazio Occupato</h3>
+        <div class="number">{{ stats.total_size_gb }} GB</div>
+    </div>
+    <div class="stat-card">
+        <h3>Ultimo Scan</h3>
+        <div class="number">{{ stats.last_scan_hours }}h fa</div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3>Scan Manuale</h3>
+            <p>Avvia una scansione immediata di tutti i canali</p>
+        </div>
+        <a href="/admin/scan-now" class="btn btn-success"
+            onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
+            🔄 Avvia Scan Ora
+        </a>
+    </div>
+</div>
+
+<!-- Aggiungi nel dashboard.html, dopo il pulsante scan-now -->
+
+<div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div>
+            <h3>🔄 Scan in corso</h3>
+            <div id="scan-status">Nessuno scan in corso</div>
+            <div id="scan-progress" style="margin-top: 10px;">
+                <div style="width: 100%; background-color: #e0e0e0; border-radius: 4px;">
+                    <div id="scan-progress-bar"
+                        style="width: 0%; height: 20px; background-color: #3498db; border-radius: 4px;"></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <button id="stop-scan" class="btn btn-danger" style="display: none;">⏹️ Ferma Scan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Poll per lo stato dello scan
+    async function checkScanStatus() {
+        try {
+            const response = await fetch('/admin/scan-status');
+            const data = await response.json();
+
+            const statusDiv = document.getElementById('scan-status');
+            const stopBtn = document.getElementById('stop-scan');
+            const progressBar = document.getElementById('scan-progress-bar');
+
+            if (data.scanning) {
+                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} canali, ${data.metrics.videos_downloaded} video scaricati)`;
+                stopBtn.style.display = 'inline-block';
+
+                // Calcola progresso approssimativo
+                if (data.metrics.videos_found > 0) {
+                    const percent = (data.metrics.videos_downloaded / data.metrics.videos_found) * 100;
+                    progressBar.style.width = percent + '%';
+                }
+            } else {
+                if (data.metrics.last_run_end) {
+                    statusDiv.innerHTML = `Ultimo scan: ${new Date(data.metrics.last_run_end).toLocaleString()} - Durata: ${data.metrics.last_run_duration.toFixed(0)}s`;
+                } else {
+                    statusDiv.innerHTML = 'Nessuno scan in corso';
+                }
+                stopBtn.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        } catch (error) {
+            console.error('Error checking scan status:', error);
+        }
+    }
+
+    // Ferma scan
+    document.getElementById('stop-scan')?.addEventListener('click', async () => {
+        if (confirm('Fermare lo scan in corso?')) {
+            await fetch('/admin/scan-stop', { method: 'POST' });
+        }
+    });
+
+    // Aggiorna ogni 2 secondi
+    setInterval(checkScanStatus, 2000);
+    checkScanStatus();
+</script>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Canali YouTube Monitorati</h2>
+        <a href="/admin/channels/add" class="btn btn-success">+ Aggiungi Canale</a>
+    </div>
+
+    {% if channels %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Canale</th>
+                <th>Nome amichevole</th> <!-- Nuova colonna -->
+                <th>URL</th>
+                <th>Video</th>
+                <th>Ultimo Scan</th>
+                <th>Attivo</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for channel in channels %}
+            <tr>
+                <td>
+                    <strong>{{ channel.name or 'Sconosciuto' }}</strong>
+                </td>
+                <td>
+                    {% if channel.friendly_name %}
+                    <span class="badge badge-warning">{{ channel.friendly_name }}</span>
+                    <br><small>podcast/{{ channel.friendly_name }}.xml</small>
+                    {% else %}
+                    <span class="badge badge-warning">Non impostato</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ channel.url }}" target="_blank" rel="noopener">
+                        {{ channel.url|truncate(30) }}
+                    </a>
+                </td>
+                <td>{{ channel.video_count }}</td>
+                <td>{{ channel.last_scan }}</td>
+                <td>
+                    {% if channel.active %}
+                        <span class="badge badge-success">Attivo</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Disattivo</span>
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a href="/admin/channels/{{ channel.id }}/edit" class="btn">✏️ Edit</a>
+                    <!-- altri pulsanti -->
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        Nessun canale configurato.
+        <a href="/admin/channels/add">Aggiungi il primo canale</a>
+    </p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Ultimi Video Scaricati</h2>
+
+    {% if recent_videos %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Titolo</th>
+                <th>Canale</th>
+                <th>Durata</th>
+                <th>Data</th>
+                <th>Dimensione</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for video in recent_videos %}
+            <tr>
+                <td>{{ video.title|truncate(50) }}</td>
+                <td>{{ video.channel_name }}</td>
+                <td>{{ (video.duration / 60)|int }}:{{ '%02d' % (video.duration % 60) }}</td>
+                <td>{% if video.upload_date %}{{ video.upload_date.strftime('%d/%m/%Y %H:%M:%S') }}{% else %}-{% endif %}</td>
+                <td>{{ (video.file_size / 1024 / 1024)|round(1) }} MB</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+        Nessun video scaricato ancora. I video verranno scaricati automaticamente.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

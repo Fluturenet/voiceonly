@@ -1,0 +1,27 @@
+# requirements.txt
+# Web Framework
+fastapi[all]>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Database
+pymongo>=4.5.0
+motor>=3.3.0  # Async MongoDB driver
+
+# Configuration
+python-dotenv>=1.0.0
+
+# YouTube Downloading with EJS Support
+# Install with: pip install yt-dlp[default]
+# This includes yt-dlp-ejs for JavaScript challenge solving
+yt-dlp>=2024.01.00
+
+# Scheduling
+apscheduler>=3.10.4
+
+# Templates
+jinja2>=3.1.2
+
+# Forms and Utilities
+python-multipart>=0.0.6
+email-validator>=2.1.0
+requests>=2.31.0

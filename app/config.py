@@ -1,0 +1,55 @@
+# app/config.py
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+from typing import Optional
+import logging
+
+logger = logging.getLogger('voiceonly')
+
+# Load environment variables from .env file
+load_dotenv()
+
+class Settings:
+    """Application settings loaded from environment variables"""
+
+    #Debug Mode
+    DEBUG_MODE: bool = os.getenv("DEBUG_MODE", "False").lower() == "true"
+    
+    #Password
+    PASSWORD: str = os.getenv("PASSWORD","changeme")
+    
+
+    
+    # MongoDB
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    MONGODB_DB: str = os.getenv("MONGODB_DB", "youtube_podcast")
+    
+    # Paths
+    BASE_DIR: Path = Path(__file__).parent.parent
+    DOWNLOAD_PATH: Path = Path(os.getenv("DOWNLOAD_PATH", "./downloads"))
+    
+    # Server
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", "8000"))
+    
+    # Worker settings
+    SCAN_INTERVAL_HOURS: int = int(os.getenv("SCAN_INTERVAL_HOURS", "6"))
+    
+    # Cookies file for yt-dlp (optional)
+    COOKIES_FILE: Optional[str] = os.getenv("COOKIES_FILE")
+    
+    def __init__(self):
+        # ... existing code ...
+        
+        # Create cookies file if path exists
+        if self.COOKIES_FILE:
+            cookies_path = Path(self.COOKIES_FILE)
+            cookies_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Ensure password file exists
+        if self.PASSWORD == "changeme":
+            logger.warning(f"❌ No password set: default password changeme")
+
+# Create global settings instance
+settings = Settings()

@@ -1,0 +1,61 @@
+<!-- app/templates/admin/add_channel.html -->
+{% extends "base.html" %}
+
+{% block title %}Aggiungi Canale - VoiceOnly{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Aggiungi Nuovo Canale YouTube</h2>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/admin/channels/add">
+        <div class="form-group">
+            <label for="url">URL del Canale YouTube</label>
+            <input type="url" id="url" name="url" required
+                placeholder="https://youtube.com/c/NomeCanale o https://youtube.com/@NomeCanale"
+                value="{{ url or '' }}">
+            <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                Inserisci l'URL del canale YouTube (es. https://youtube.com/c/NomeCanale o
+                https://youtube.com/@NomeCanale)
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="friendly_name">Nome amichevole (opzionale)</label>
+            <input type="text" id="friendly_name" name="friendly_name" placeholder="es. musica, podcast1, A123"
+                value="{{ friendly_name or '' }}" pattern="[a-zA-Z0-9_-]+"
+                title="Solo lettere, numeri, trattini e underscore">
+            <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                Un nome breve e facile da ricordare per questo canale.
+                Se non lo specifichi, verrà generato automaticamente dal nome del canale.
+                Potrai usare questo nome nell'URL del feed: /podcast/NAMEFRIENDLY.xml
+            </small>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Aggiungi Canale</button>
+            <a href="/admin" class="btn">Annulla</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Come trovare l'URL del canale</h3>
+    <ul style="margin-left: 1.5rem;">
+        <li>Vai su YouTube e cerca il canale</li>
+        <li>Clicca sul nome del canale per andare alla sua pagina</li>
+        <li>L'URL nella barra degli indirizzi sarà qualcosa come:
+            <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                <li><code>https://youtube.com/c/NomeCanale</code></li>
+                <li><code>https://youtube.com/@NomeCanale</code></li>
+                <li><code>https://youtube.com/channel/UC...</code></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+{% endblock %}

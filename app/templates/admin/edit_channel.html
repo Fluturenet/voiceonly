@@ -1,0 +1,67 @@
+<!-- app/templates/admin/edit_channel.html -->
+{% extends "base.html" %}
+
+{% block title %}Modifica {{ channel.name }} - VoiceOnly{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Modifica Canale: {{ channel.name }}</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="friendly_name">Nome amichevole</label>
+            <input type="text" 
+                   id="friendly_name" 
+                   name="friendly_name" 
+                   required
+                   pattern="[a-zA-Z0-9_-]+"
+                   title="Solo lettere, numeri, trattini e underscore"
+                   value="{{ channel.friendly_name or '' }}">
+            <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                Un nome breve e facile da ricordare. Solo lettere, numeri, trattini e underscore.
+                Questo nome sarà usato nell'URL del feed: /podcast/NOME.xml
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>URL YouTube</label>
+            <input type="text" value="{{ channel.url }}" disabled class="form-control" style="background: #f5f5f5;">
+            <small style="color: #7f8c8d;">L'URL non può essere modificato</small>
+        </div>
+        
+        <div class="form-group">
+            <label>ID YouTube</label>
+            <input type="text" value="{{ channel.channel_id }}" disabled class="form-control" style="background: #f5f5f5;">
+        </div>
+
+        <div class="form-group">
+            <label>Stato canale</label>
+            <select name="active" class="form-control">
+                <option value="on" {% if channel.active %}selected{% endif %}>Attivo</option>
+                <option value="off" {% if not channel.active %}selected{% endif %}>Disattivo</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Salva Modifiche</button>
+            <a href="/admin/channels/{{ channel._id }}" class="btn">Annulla</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Anteprima URL Feed</h3>
+    <p>Dopo il salvataggio, potrai accedere al feed podcast usando:</p>
+    <ul>
+        <li><strong>Con ID MongoDB:</strong> <code>{{ request.base_url }}podcast/{{ channel._id }}.xml</code></li>
+        <li><strong>Con ID YouTube:</strong> <code>{{ request.base_url }}podcast/{{ channel.channel_id }}.xml</code></li>
+        <li><strong>Con nome amichevole:</strong> <code>{{ request.base_url }}podcast/{{ channel.friendly_name or 'NOME' }}.xml</code></li>
+    </ul>
+</div>
+{% endblock %}

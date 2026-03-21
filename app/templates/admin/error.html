@@ -1,0 +1,27 @@
+<!-- app/templates/admin/error.html -->
+{% extends "base.html" %}
+
+{% block title %}Errore - VoiceOnly{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #e74c3c;">⚠️ Errore</h2>
+    
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <h3>Possibili soluzioni:</h3>
+        <ul style="margin-left: 1.5rem; margin-top: 1rem;">
+            <li>Verifica che MongoDB sia in esecuzione: <code>sudo systemctl status mongod</code></li>
+            <li>Controlla che l'URI in .env sia corretto: <code>MONGODB_URI=mongodb://localhost:27017</code></li>
+            <li>Riavvia l'applicazione dopo aver avviato MongoDB</li>
+        </ul>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="/admin" class="btn">🔄 Riprova</a>
+    </div>
+</div>
+{% endblock %}

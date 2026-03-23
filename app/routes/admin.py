@@ -2,14 +2,17 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from datetime import datetime
 import re
 import os
 from bson import ObjectId
 from typing import Optional
-import yt_dlp 
+import yt_dlp
+import xml.etree.ElementTree as ET
+from io import BytesIO, StringIO
+import xml.dom.minidom as minidom 
 
 from app.auth import require_auth
 from app.models import Channel, ChannelCreate
@@ -566,3 +569,178 @@ async def lookup_channel(identifier: str):
     }
     
     return results
+
+
+def generate_opml_content(channels: list, host: str = "localhost", port: int = 8000) -> str:
+    """
+    Generate OPML XML content from channels list
+    """
+    opml = ET.Element('opml')
+    opml.set('version', '2.0')
+    
+    head = ET.SubElement(opml, 'head')
+    title = ET.SubElement(head, 'title')
+    title.text = 'VoiceOnly Podcast Feeds'
+    
+    date_created = ET.SubElement(head, 'dateCreated')
+    date_created.text = datetime.utcnow().isoformat()
+    
+    body = ET.SubElement(opml, 'body')
+    
+    for channel in channels:
+        outline = ET.SubElement(body, 'outline')
+        outline.set('type', 'rss')
+        outline.set('text', channel.get('friendly_name') or channel.get('name') or 'Unknown')
+        
+        # Use the podcast RSS feed URL instead of the original YouTube URL
+        friendly_name = channel.get('friendly_name')
+        if friendly_name:
+            rss_url = f"http://{host}:{port}/podcast/{friendly_name}.xml"
+        else:
+            # Fallback to original URL if no friendly_name
+            rss_url = channel.get('url')
+        
+        outline.set('xmlUrl', rss_url)
+        outline.set('htmlUrl', channel.get('url'))  # Keep original YouTube URL as htmlUrl
+        if channel.get('description'):
+            outline.set('description', channel['description'])
+    
+    # Pretty print XML
+    rough_string = ET.tostring(opml, encoding='unicode')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent='  ')
+
+
+@router.get("/opml/export")
+async def export_opml(request: Request):
+    """Export all active channels as OPML file"""
+    db = get_database()
+    
+    # Get all active channels
+    channels = await db.channels.find({"active": True}).to_list(length=None)
+    
+    if not channels:
+        raise HTTPException(status_code=404, detail="No active channels found")
+    
+    # Generate OPML content with correct RSS feed URLs
+    opml_content = generate_opml_content(channels, request.base_url.hostname, request.base_url.port)
+    
+    # Return as downloadable file
+    return StreamingResponse(
+        iter([opml_content.encode('utf-8')]),
+        media_type="application/xml",
+        headers={"Content-Disposition": "attachment; filename=voiceonly-podcasts.opml"}
+    )
+
+
+@router.get("/opml/import-form", response_class=HTMLResponse)
+async def import_opml_form(request: Request):
+    """Show form to import OPML file"""
+    return templates.TemplateResponse(
+        name="admin/import_opml.html",
+        request=request,
+        context={}
+    )
+
+
+@router.post("/opml/import")
+async def import_opml(
+    request: Request,
+    file: UploadFile = File(...),
+    friendly_name_prefix: Optional[str] = Form(None)
+):
+    """Import channels from OPML file"""
+    db = get_database()
+    
+    try:
+        # Read file content
+        content = await file.read()
+        opml_string = content.decode('utf-8')
+        
+        # Parse OPML
+        root = ET.fromstring(opml_string)
+        
+        # Find all outline elements with type='rss'
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        for outline in root.findall('.//outline[@type="rss"]'):
+            try:
+                url = outline.get('htmlUrl')
+                if not url:
+                    skipped_count += 1
+                    continue
+                
+                # Check if channel already exists
+                existing = await db.channels.find_one({"url": url})
+                if existing:
+                    skipped_count += 1
+                    continue
+                
+                # Extract channel info
+                logger.info(f"Importing channel from OPML: {url}")
+                channel_info = extract_channel_info_with_library(url)
+                
+                # Generate friendly name
+                friendly_name = outline.get('text', 'unknown').lower()
+                friendly_name = re.sub(r'[^a-zA-Z0-9]+', '-', friendly_name).strip('-')[:30]
+                
+                # Add prefix if provided
+                if friendly_name_prefix:
+                    friendly_name = f"{friendly_name_prefix}-{friendly_name}"
+                
+                # Ensure uniqueness
+                base_name = friendly_name
+                counter = 1
+                while True:
+                    check = await db.channels.find_one({"friendly_name": friendly_name})
+                    if not check:
+                        break
+                    friendly_name = f"{base_name}-{counter}"
+                    counter += 1
+                
+                # Create channel
+                channel_dict = {
+                    "url": url,
+                    "name": channel_info.get("name"),
+                    "friendly_name": friendly_name,
+                    "channel_id": channel_info.get("channel_id"),
+                    "description": outline.get('description') or channel_info.get("description"),
+                    "active": True,
+                    "created_at": datetime.utcnow()
+                }
+                
+                # Insert into database
+                await db.channels.insert_one(channel_dict)
+                imported_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error importing channel from outline: {e}")
+                errors.append(f"Errore importando {outline.get('text')}: {str(e)}")
+        
+        # Redirect with success message
+        return templates.TemplateResponse(
+            name="admin/import_opml_result.html",
+            request=request,
+            context={
+                "request": request,
+                "imported_count": imported_count,
+                "skipped_count": skipped_count,
+                "errors": errors
+            }
+        )
+        
+    except ET.ParseError as e:
+        logger.error(f"Invalid OPML file: {e}")
+        return templates.TemplateResponse(
+            name="admin/import_opml.html",
+            request=request,
+            context={
+                "request": request,
+                "error": f"File OPML non valido: {str(e)}"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error importing OPML: {e}")
+        raise HTTPException(status_code=500, detail=f"Error importing OPML: {str(e)}")

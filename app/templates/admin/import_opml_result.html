@@ -1,0 +1,54 @@
+<!-- app/templates/admin/import_opml_result.html -->
+{% extends "base.html" %}
+
+{% block title %}Risultato Importazione OPML - VoiceOnly{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>✅ Importazione OPML Completata</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background-color: #efe; border: 1px solid #8f8; padding: 1rem; border-radius: 4px;">
+            <div style="font-size: 24px; font-weight: bold; color: #080;">{{ imported_count }}</div>
+            <div style="color: #666;">Canali Importati</div>
+        </div>
+        
+        <div style="background-color: #ffe; border: 1px solid #f8a; padding: 1rem; border-radius: 4px;">
+            <div style="font-size: 24px; font-weight: bold; color: #880;">{{ skipped_count }}</div>
+            <div style="color: #666;">Canali Saltati</div>
+        </div>
+    </div>
+
+    {% if errors %}
+    <div style="background-color: #fee; border: 1px solid #f88; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+        <h3 style="margin-top: 0; color: #c00;">⚠️ Errori durante l'importazione:</h3>
+        <ul style="margin: 0.5rem 0; padding-left: 2rem;">
+            {% for error in errors %}
+            <li style="margin: 0.5rem 0;">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <p style="margin-bottom: 1.5rem;">
+        L'importazione è stata completata! I canali importati appariranno nella dashboard.
+    </p>
+
+    <div style="display: flex; gap: 1rem;">
+        <a href="/admin" class="btn btn-primary">👈 Torna alla Dashboard</a>
+        <a href="/admin/channels/add" class="btn btn-secondary">➕ Aggiungi Canale Manuale</a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem; background-color: #f0f8ff;">
+    <h3>ℹ️ Cosa non è stato importato?</h3>
+    <p>
+        I canali sono stati saltati se:
+    </p>
+    <ul style="margin: 1rem 0; padding-left: 2rem;">
+        <li>Il URL era non valido o vuoto</li>
+        <li>Il canale era già presente nella tua lista</li>
+        <li>Il canale non era un URL YouTube valido</li>
+    </ul>
+</div>
+{% endblock %}

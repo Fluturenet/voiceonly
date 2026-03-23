@@ -99,8 +99,9 @@ async def admin_dashboard(request: Request):
     # Check database connection first
     if not is_database_connected():
         return templates.TemplateResponse(
-            "admin/error.html",
-            {
+            name="admin/error.html",
+            request=request,
+            context={
                 "request": request,
                 "error": "Database non connesso. Verifica che MongoDB sia in esecuzione."
             }
@@ -211,8 +212,9 @@ async def admin_dashboard(request: Request):
     }
     
     return templates.TemplateResponse(
-        "admin/dashboard.html",
-        {
+        name="admin/dashboard.html",
+        request=request,
+        context={
             "request": request,
             "channels": channels,
             "recent_videos": recent_videos,
@@ -224,8 +226,9 @@ async def admin_dashboard(request: Request):
 async def add_channel_form(request: Request):
     """Show form to add a new channel"""
     return templates.TemplateResponse(
-        "admin/add_channel.html",
-        {"request": request}
+        name="admin/add_channel.html",
+        request=request,
+        context={}
     )
 
 @router.post("/channels/add")
@@ -242,8 +245,9 @@ async def add_channel_submit(
         channel_create = ChannelCreate(url=url)
     except ValueError as e:
         return templates.TemplateResponse(
-            "admin/add_channel.html",
-            {
+            name="admin/add_channel.html",
+            request=request,
+            context={
                 "request": request,
                 "error": f"URL non valido: {str(e)}",
                 "url": url,
@@ -255,8 +259,9 @@ async def add_channel_submit(
     existing = await db.channels.find_one({"url": url})
     if existing is not None:
         return templates.TemplateResponse(
-            "admin/add_channel.html",
-            {
+            name="admin/add_channel.html",
+            request=request,
+            context={
                 "request": request,
                 "error": "Questo canale è già stato aggiunto!",
                 "url": url,
@@ -269,8 +274,9 @@ async def add_channel_submit(
         existing = await db.channels.find_one({"friendly_name": friendly_name})
         if existing is not None:
             return templates.TemplateResponse(
-                "admin/add_channel.html",
-                {
+                name="admin/add_channel.html",
+                request=request,
+                context={
                     "request": request,
                     "error": "Questo friendly name è già utilizzato da un altro canale!",
                     "url": url,
@@ -334,8 +340,9 @@ async def edit_channel_form(request: Request, channel_id: str):
         raise HTTPException(status_code=404, detail="Channel not found")
     
     return templates.TemplateResponse(
-        "admin/edit_channel.html",
-        {
+        name="admin/edit_channel.html",
+        request=request,
+        context={
             "request": request,
             "channel": channel
         }
@@ -364,8 +371,9 @@ async def edit_channel_submit(
     except ValueError as e:
         channel = await db.channels.find_one({"_id": ObjectId(channel_id)})
         return templates.TemplateResponse(
-            "admin/edit_channel.html",
-            {
+            name="admin/edit_channel.html",
+            request=request,
+            context={
                 "request": request,
                 "channel": channel,
                 "error": str(e),
@@ -381,8 +389,9 @@ async def edit_channel_submit(
     if existing:
         channel = await db.channels.find_one({"_id": ObjectId(channel_id)})
         return templates.TemplateResponse(
-            "admin/edit_channel.html",
-            {
+            name="admin/edit_channel.html",
+            request=request,
+            context={
                 "request": request,
                 "channel": channel,
                 "error": "Questo friendly name è già utilizzato da un altro canale",
@@ -456,8 +465,9 @@ async def view_logs(request: Request, clear: Optional[bool] = False):
             logs = f.readlines()[-100:]
     
     return templates.TemplateResponse(
-        "admin/logs.html",
-        {"request": request, "logs": logs}
+        name="admin/logs.html",
+        request=request,
+        context={"request": request, "logs": logs}
     )
 
 @router.get("/scan-now")
@@ -466,8 +476,9 @@ async def trigger_scan(request: Request):
     try:
         result = await manual_scan()
         return templates.TemplateResponse(
-            "admin/scan_started.html",
-            {"request": request, "message": result["message"]}
+            name="admin/scan_started.html",
+            request=request,
+            context={"request": request, "message": result["message"]}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error starting scan: {e}")
@@ -507,8 +518,9 @@ async def channel_detail(request: Request, channel_id: str):
     videos = await videos_cursor.to_list(length=100)
     
     return templates.TemplateResponse(
-        "admin/channel_detail.html",
-        {
+        name="admin/channel_detail.html",
+        request=request,
+        context={
             "request": request,
             "channel": channel,
             "videos": videos

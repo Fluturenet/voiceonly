@@ -294,10 +294,13 @@ def worker_thread():
                         scan_should_stop = True
                     elif cmd == 'start_scan':
                         logger.info("Start scan command received")
-                        # Run scan in a separate thread to not block command processing
-                        scan_thread = threading.Thread(target=run_scan, args=(downloader,))
-                        scan_thread.daemon = True
-                        scan_thread.start()
+                        if not settings.DEBUG_MODE:
+                            # Run scan in a separate thread to not block command processing
+                            scan_thread = threading.Thread(target=run_scan, args=(downloader,))
+                            scan_thread.daemon = True
+                            scan_thread.start()
+                        else:
+                            logger.info("Start scan DEBUG MODE")
                 
                 # Small sleep to prevent CPU spinning
                 time.sleep(0.1)

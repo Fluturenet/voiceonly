@@ -143,7 +143,6 @@
                 <td>
                     {% if channel.friendly_name %}
                     <span class="badge badge-warning">{{ channel.friendly_name }}</span>
-                    <br><small>podcast/{{ channel.friendly_name }}.xml</small>
                     {% else %}
                     <span class="badge badge-warning">Non impostato</span>
                     {% endif %}
@@ -163,7 +162,7 @@
                     {% endif %}
                 </td>
                 <td class="actions">
-                    <a href="/admin/channels/{{ channel.id }}/edit" class="btn">✏️ Edit</a>
+                    <a href="/admin/channels/{{ channel.id }}" class="btn">Vedi</a>
                     <!-- altri pulsanti -->
                 </td>
             </tr>

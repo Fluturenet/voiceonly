@@ -84,7 +84,7 @@
                         <small>{{ video.video_id }}</small>
                     </td>
                     <td>{{ (video.duration / 60)|int }}:{{ '%02d' % (video.duration % 60) }}</td>
-                    <td>{{ video.upload_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{% if video.upload_date %}{{ video.upload_date.strftime('%d/%m/%Y %H:%M:%S') }}{% else %}-{% endif %}</td>
                     <td>{{ (video.file_size / 1024 / 1024)|round(1) }} MB</td>
                     <td>
                         <a href="/download/{{ video.video_id }}" class="btn" target="_blank">🎵 Ascolta</a>

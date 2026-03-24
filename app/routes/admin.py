@@ -495,7 +495,26 @@ async def channel_detail(request: Request, channel_id: str):
         "downloaded": True
     }).sort("upload_date", -1).limit(100)
     
-    videos = await videos_cursor.to_list(length=100)
+    # videos = await videos_cursor.to_list(length=100)
+    videos = []
+    
+    async for video in videos_cursor:
+        upload_date = None
+        if video.get("upload_timestamp") is not None:
+            try:
+                upload_date = datetime.fromtimestamp(float(video["upload_timestamp"]))
+            except (TypeError, ValueError, OSError):
+                upload_date = None
+
+        videos.append({
+            "title": video.get("title", "Unknown"),
+            "channel_name": video.get("channel_name", "Unknown"),
+            "duration": video.get("duration", 0),
+            "upload_date": upload_date,
+            "file_size": video.get("file_size", 0)
+        })
+    
+    
     
     return templates.TemplateResponse(
         name="admin/channel_detail.html",
@@ -506,46 +525,6 @@ async def channel_detail(request: Request, channel_id: str):
             "videos": videos
         }
     )
-
-    # In app/routes/admin.py, aggiungi una route per testare la ricerca canali
-
-@router.get("/channels/lookup/{identifier}")
-async def lookup_channel(identifier: str):
-    """
-    Debug endpoint to see how channel lookup works
-    """
-    db = get_database()
-    
-    results = {
-        "identifier": identifier,
-        "lookups": {}
-    }
-    
-    # Try as MongoDB ObjectId
-    if ObjectId.is_valid(identifier):
-        channel = await db.channels.find_one({"_id": ObjectId(identifier)})
-        results["lookups"]["mongo_id"] = {
-            "found": channel is not None,
-            "channel": str(channel['_id']) if channel else None
-        }
-    
-    # Try as YouTube channel ID
-    channel = await db.channels.find_one({"channel_id": identifier})
-    results["lookups"]["youtube_id"] = {
-        "found": channel is not None,
-        "channel": str(channel['_id']) if channel else None
-    }
-    
-    # Try as name
-    channel = await db.channels.find_one({
-        "name": {"$regex": f"^{identifier}$", "$options": "i"}
-    })
-    results["lookups"]["name"] = {
-        "found": channel is not None,
-        "channel": str(channel['_id']) if channel else None
-    }
-    
-    return results
 
 
 def generate_opml_content(channels: list, request: Request) -> str:

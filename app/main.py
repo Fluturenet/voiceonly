@@ -79,16 +79,4 @@ async def root():
     </html>
     """
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=True,
-        log_level="info"
-    )

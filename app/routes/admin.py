@@ -571,7 +571,7 @@ async def lookup_channel(identifier: str):
     return results
 
 
-def generate_opml_content(channels: list, host: str = "localhost", port: int = 8000) -> str:
+def generate_opml_content(channels: list, host: str = "localhost", port: int = 8000, user: str = "user", password: str = "changeme") -> str:
     """
     Generate OPML XML content from channels list
     """
@@ -595,7 +595,7 @@ def generate_opml_content(channels: list, host: str = "localhost", port: int = 8
         # Use the podcast RSS feed URL instead of the original YouTube URL
         friendly_name = channel.get('friendly_name')
         if friendly_name:
-            rss_url = f"http://{host}:{port}/podcast/{friendly_name}.xml"
+            rss_url = f"http://{user}:{password}@{host}:{port}/podcast/{friendly_name}.xml"
         else:
             # Fallback to original URL if no friendly_name
             rss_url = channel.get('url')
@@ -623,7 +623,8 @@ async def export_opml(request: Request):
         raise HTTPException(status_code=404, detail="No active channels found")
     
     # Generate OPML content with correct RSS feed URLs
-    opml_content = generate_opml_content(channels, request.base_url.hostname, request.base_url.port)
+    opml_content = generate_opml_content(channels = channels, host = request.base_url.hostname, 
+                                         port = request.base_url.port, user = "user", password = settings.PASSWORD)
     
     # Return as downloadable file
     return StreamingResponse(

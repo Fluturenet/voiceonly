@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
-import asyncio
 import uvicorn
 import logging
 

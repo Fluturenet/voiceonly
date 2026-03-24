@@ -4,6 +4,7 @@ from typing import Optional, Any, Dict, List
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core import core_schema
 from bson import ObjectId
+import re
 
 # Custom ObjectId type for Pydantic v2
 class PyObjectId:

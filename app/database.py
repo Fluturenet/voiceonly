@@ -2,7 +2,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import settings
 import threading
-import asyncio
 import logging
 
 logger = logging.getLogger('voiceonly')
@@ -32,16 +31,6 @@ def close_thread_connection():
         del _thread_local.client
         del _thread_local.mongodb
 
-async def ping_database():
-    """Test database connection"""
-    try:
-        db = get_database()
-        await db.command('ping')
-        return True
-    except Exception as e:
-        logger.error(f"Database ping failed: {e}")
-        return False
-
 def is_database_connected():
     """
     Check if database is connected for the current thread.
@@ -58,24 +47,6 @@ def is_database_connected():
         return True
     except Exception:
         return False
-
-def get_connection_status():
-    """Get detailed connection status for debugging"""
-    status = {
-        "has_connection": hasattr(_thread_local, "client"),
-        "thread_id": threading.get_ident(),
-    }
-    
-    if hasattr(_thread_local, "client"):
-        try:
-            # Try to get some basic info about the connection
-            client = _thread_local.client
-            status["address"] = str(client.address)
-            status["nodes"] = list(client.nodes.keys()) if hasattr(client, 'nodes') else []
-        except Exception as e:
-            status["error"] = str(e)
-    
-    return status
 
 # For backwards compatibility
 connect_to_mongo = get_database

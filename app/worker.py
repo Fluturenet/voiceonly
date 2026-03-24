@@ -41,7 +41,6 @@ scan_should_stop = False
 
 # Queue for communication between threads
 command_queue = queue.Queue()
-result_queue = queue.Queue()
 
 # Metrics for monitoring
 metrics = {
@@ -53,32 +52,6 @@ metrics = {
     'last_run_end': None,
     'last_run_duration': 0
 }
-
-class RateLimiter:
-    """Rate limiter for YouTube requests"""
-    def __init__(self, calls_per_minute: int = RATE_LIMIT_CALLS_PER_MINUTE):
-        self.calls_per_minute = calls_per_minute
-        self.calls = []
-        self.lock = threading.Lock()
-    
-    def wait_if_needed(self):
-        """Wait if we've exceeded the rate limit (thread-safe)"""
-        with self.lock:
-            now = time.time()
-            self.calls = [t for t in self.calls if now - t < 60]
-            
-            if len(self.calls) >= self.calls_per_minute:
-                wait_time = 60 - (now - self.calls[0])
-                if wait_time > 0:
-                    logger.info(f"Rate limit reached, waiting {wait_time:.1f}s")
-                    time.sleep(wait_time)
-                    now = time.time()
-                    self.calls = [t for t in self.calls if now - t < 60]
-            
-            self.calls.append(now)
-
-# Global rate limiter instance
-rate_limiter = RateLimiter()
 
 def sanitize_filename(filename: Optional[str]) -> str:
     """Remove unsafe characters from filename"""

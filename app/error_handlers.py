@@ -3,7 +3,6 @@
 
 import logging
 import yt_dlp
-from typing import Callable, Any
 
 logger = logging.getLogger('voiceonly')
 
@@ -43,29 +42,4 @@ def handle_extraction_error(error: Exception, url: str) -> bool:
         return False
 
 
-def handle_database_error(error: Exception, operation: str) -> bool:
-    """
-    Handle database operation errors
-    Returns: True if retryable, False if not
-    """
-    if isinstance(error, ConnectionError):
-        logger.error(f"Database connection error during {operation}: {error}")
-        return True  # Retryable connection error
-    elif isinstance(error, Exception) and "duplicate" in str(error).lower():
-        logger.debug(f"Duplicate entry during {operation}: {error}")
-        return False  # Don't retry duplicate key errors
-    else:
-        logger.error(f"Database error during {operation}: {error}", exc_info=True)
-        return False
 
-
-def safe_operation(func: Callable, *args, **kwargs) -> tuple[Any, Exception]:
-    """
-    Safely execute an operation and return result and exception
-    Returns: (result, error) where one is None if successful
-    """
-    try:
-        result = func(*args, **kwargs)
-        return result, None
-    except Exception as e:
-        return None, e

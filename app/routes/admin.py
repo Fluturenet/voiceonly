@@ -450,28 +450,6 @@ async def delete_channel(channel_id: str):
     
     return RedirectResponse(url="/admin", status_code=303)
 
-@router.get("/logs", response_class=HTMLResponse)
-async def view_logs(request: Request, clear: Optional[bool] = False):
-    """View system logs"""
-    log_file = "app.log"
-    logs = []
-    
-    if clear:
-        # Clear log file
-        open(log_file, 'w').close()
-        return RedirectResponse(url="/admin/logs", status_code=303)
-    
-    # Read last 100 lines from log file
-    if os.path.exists(log_file):
-        with open(log_file, 'r') as f:
-            logs = f.readlines()[-100:]
-    
-    return templates.TemplateResponse(
-        name="admin/logs.html",
-        request=request,
-        context={"request": request, "logs": logs}
-    )
-
 @router.get("/scan-now")
 async def trigger_scan(request: Request):
     """Manually trigger a scan"""

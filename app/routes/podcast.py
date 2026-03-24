@@ -236,13 +236,3 @@ async def get_channel_podcast_info(channel_id: str):
         "feed_url": feed_url,
         "mongo_id": str(channel['_id'])
     }
-
-# Clean cache periodically (optional)
-async def cleanup_cache():
-    """Remove expired cache entries"""
-    global feed_cache
-    now = datetime.utcnow()
-    feed_cache = {
-        k: v for k, v in feed_cache.items()
-        if now - v[0] < CACHE_DURATION
-    }

@@ -1,5 +1,5 @@
 # app/auth.py
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from app.config import settings
@@ -33,3 +33,21 @@ def verify_password(credentials: HTTPBasicCredentials = Depends(security)):
 def require_auth(auth: bool = Depends(verify_password)):
     """Dependency to protect routes that need authentication"""
     return auth
+
+def require_token(token: str = Query(...)):
+    """
+    Verify the token from query parameter against the one in config
+    Uses constant-time comparison to prevent timing attacks
+    """
+    is_correct = secrets.compare_digest(
+        token.encode("utf8"),
+        settings.TOKEN.encode("utf8")
+    )
+    
+    if not is_correct:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    
+    return True

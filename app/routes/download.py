@@ -8,13 +8,13 @@ from pathlib import Path
 import os
 from typing import Optional
 
-from app.auth import require_auth
+from app.auth import require_token
 from app.database import get_database
 from app.config import settings
 
 logger = logging.getLogger('voiceonly')
 
-router = APIRouter(dependencies=[Depends(require_auth)])
+router = APIRouter(dependencies=[Depends(require_token)])
 
 
 def sanitize_download_filename(filename: str, max_length: int = 200) -> str:

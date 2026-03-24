@@ -19,8 +19,9 @@ class Settings:
     #Password
     PASSWORD: str = os.getenv("PASSWORD","changeme")
     
+    #token
+    TOKEN: str = os.getenv("TOKEN", "123AB567")
 
-    
     # MongoDB
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     MONGODB_DB: str = os.getenv("MONGODB_DB", "youtube_podcast")

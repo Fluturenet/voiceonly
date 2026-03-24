@@ -4,7 +4,6 @@ from typing import List, Optional, Dict
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import email.utils
-from urllib.parse import urlparse
 from app.config import settings
 
 def format_rfc822_date(timestamp: float) -> str:
@@ -120,10 +119,7 @@ def generate_podcast_feed(
         
         # Enclosure (audio file)
         if episode.get('file_path'):
-            parsed_url = urlparse(base_url)
-            host = parsed_url.hostname
-            port = parsed_url.port
-            file_url = f"http://user:{settings.PASSWORD}@{host}:{port}/download/{episode['video_id']}"
+            file_url = f"{base_url}/download/{episode['video_id']}?token={settings.TOKEN}"
             ET.SubElement(item, 'enclosure', {
                 'url': file_url,
                 'length': str(episode.get('file_size', 0)),

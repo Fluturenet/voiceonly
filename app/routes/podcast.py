@@ -6,14 +6,14 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.auth import require_auth
+from app.auth import require_token
 from app.database import get_database
 from app.utils.rss import generate_podcast_feed
 from app.constants import FEED_CACHE_MAX_SIZE, FEED_CACHE_DURATION_HOURS
 
 logger = logging.getLogger('voiceonly')
 
-router = APIRouter(dependencies=[Depends(require_auth)])
+router = APIRouter(dependencies=[Depends(require_token)])
 
 
 class LRUFeedCache:

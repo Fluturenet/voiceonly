@@ -9,7 +9,7 @@ from typing import Optional
 from app.auth import require_token
 from app.database import get_database
 from app.utils.rss import generate_podcast_feed
-from app.constants import FEED_CACHE_MAX_SIZE, FEED_CACHE_DURATION_HOURS
+from app.constants import FEED_CACHE_MAX_SIZE, FEED_CACHE_DURATION_SECONDS
 
 logger = logging.getLogger('voiceonly')
 
@@ -21,9 +21,9 @@ class LRUFeedCache:
     LRU (Least Recently Used) cache for podcast feeds with TTL (Time To Live)
     Prevents unbounded memory growth when caching feed XML
     """
-    def __init__(self, max_size: int = FEED_CACHE_MAX_SIZE, ttl_hours: int = FEED_CACHE_DURATION_HOURS):
+    def __init__(self, max_size: int = FEED_CACHE_MAX_SIZE, ttl_seconds: int = FEED_CACHE_DURATION_SECONDS):
         self.max_size = max_size
-        self.ttl = timedelta(hours=ttl_hours)
+        self.ttl = timedelta(seconds=ttl_seconds)
         self.cache = {}  # {key: (content, timestamp)}
         self.access_order = []  # Track access order for LRU
 
@@ -99,7 +99,7 @@ async def get_podcast_feed(
             content=cached_feed,
             media_type="application/rss+xml; charset=utf-8",
             headers={
-                "Cache-Control": f"max-age={int(FEED_CACHE_DURATION_HOURS * 3600)}",
+                "Cache-Control": f"max-age={FEED_CACHE_DURATION_SECONDS}",
                 "X-Cache": "HIT"
             }
         )
@@ -182,7 +182,7 @@ async def get_podcast_feed(
         content=feed_xml,
         media_type="application/rss+xml; charset=utf-8",
         headers={
-            "Cache-Control": f"max-age={int(FEED_CACHE_DURATION_HOURS * 3600)}",
+            "Cache-Control": f"max-age={FEED_CACHE_DURATION_SECONDS}",
             "X-Cache": "MISS"
         }
     )

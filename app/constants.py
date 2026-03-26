@@ -58,7 +58,7 @@ YDL_ADMIN_OPTS = {
 
 # ===== CACHE SETTINGS =====
 FEED_CACHE_MAX_SIZE = 50  # Maximum cached feed entries
-FEED_CACHE_DURATION_HOURS = 1  # How long to keep feeds cached
+FEED_CACHE_DURATION_SECONDS = 30  # How long to keep feeds cached
 
 # ===== RATE LIMITING SETTINGS =====
 RATE_LIMIT_CALLS_PER_MINUTE = 30

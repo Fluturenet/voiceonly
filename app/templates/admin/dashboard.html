@@ -89,7 +89,7 @@
                 stopBtn.style.display = 'inline-block';
 
                 // Calcola progresso approssimativo
-                if (data.metrics.videos_found > 0) {
+                if (data.metrics.channels_found > 0) {
                     const percent = (data.metrics.channels_scanned / data.metrics.channels_found) * 100;
                     progressBar.style.width = percent + '%';
                 }

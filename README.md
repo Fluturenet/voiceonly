@@ -365,10 +365,10 @@ pytest tests/
 
 ### Viewing Logs
 
-Logs are written to `worker.log` and console output:
+Logs are written to console output:
 
 ```bash
-tail -f worker.log
+journalctl -u voiceonly.service -f
 ```
 
 ### Database Inspection

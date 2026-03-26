@@ -22,17 +22,9 @@ from app.constants import (
     YDL_BULK_DOWNLOAD_OPTS, RATE_LIMIT_CALLS_PER_MINUTE, DOWNLOAD_ARCHIVE_SUFFIX
 )
 from app.error_handlers import handle_download_error, handle_extraction_error
+from app.logging_config import configure_named_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('worker.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('youtube-worker')
+logger = configure_named_logger('youtube-worker')
 
 # Global variables
 scheduler = None

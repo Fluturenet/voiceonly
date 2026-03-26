@@ -7,9 +7,11 @@ import uvicorn
 import logging
 
 from app.config import settings
+from app.logging_config import configure_named_logger, configure_uvicorn_loggers
 from app.routes import admin, podcast, download
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('voiceonly')
+configure_uvicorn_loggers()
 
 logging.getLogger("watchfiles").setLevel(logging.WARNING)
 

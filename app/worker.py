@@ -37,6 +37,7 @@ command_queue = queue.Queue()
 # Metrics for monitoring
 metrics = {
     'channels_scanned': 0,
+    'channels_found': 0,
     'videos_downloaded': 0,
     'download_errors': 0,
     'total_download_size': 0,
@@ -376,6 +377,7 @@ async def async_scan(downloader):
         logger.info(f"Found {len(channels)} active channels to scan")
         
         # Reset metrics
+        metrics['channels_found']= len(channels)
         metrics['channels_scanned'] = 0
         metrics['videos_downloaded'] = 0
         metrics['download_errors'] = 0

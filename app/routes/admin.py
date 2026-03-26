@@ -205,13 +205,19 @@ async def admin_dashboard(request: Request):
     if last_scan_channel is not None and last_scan_channel.get("last_scan") is not None:
         hours_ago = (datetime.utcnow() - last_scan_channel["last_scan"]).total_seconds() / 3600
         last_scan_hours = f"{int(hours_ago)}"
+ 
+    st = os.statvfs(settings.DOWNLOAD_PATH)
+    disk_free = st.f_bavail * st.f_frsize
     
     stats = {
         "active_channels": active_channels,
         "total_videos": total_videos,
         "total_size_gb": round(total_size / (1024**3), 2) if total_size > 0 else 0,
-        "last_scan_hours": last_scan_hours
+        "last_scan_hours": last_scan_hours,
+        "disk_free_gb": round(disk_free/(1024**3), 2)
     }
+    
+
     
     return templates.TemplateResponse(
         name="admin/dashboard.html",

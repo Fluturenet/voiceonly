@@ -2,9 +2,9 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import settings
 import threading
-import logging
+from app.logging_config import configure_named_logger
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('core_database')
 
 # Thread-local storage for database connections
 _thread_local = threading.local()

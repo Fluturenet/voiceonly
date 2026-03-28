@@ -1,6 +1,4 @@
 # app/routes/admin.py
-import logging
-
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from datetime import datetime
@@ -19,11 +17,12 @@ from app.database import get_database, is_database_connected
 from app.templates import templates
 from app.config import settings
 from app.constants import YDL_ADMIN_OPTS
+from app.logging_config import configure_named_logger
 
 from app.worker import manual_scan, stop_scan, is_scanning, get_metrics
 
 # Setup logger
-logger = logging.getLogger('youtube-admin')
+logger = configure_named_logger('route_admin')
 
 router = APIRouter(dependencies=[Depends(require_auth)])
 

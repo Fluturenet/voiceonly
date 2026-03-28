@@ -1,5 +1,4 @@
 # app/routes/podcast.py
-import logging
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import Response
 from bson import ObjectId
@@ -10,8 +9,9 @@ from app.auth import require_token
 from app.database import get_database
 from app.utils.rss import generate_podcast_feed
 from app.constants import FEED_CACHE_MAX_SIZE, FEED_CACHE_DURATION_SECONDS
+from app.logging_config import configure_named_logger
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('route_podcast')
 
 router = APIRouter(dependencies=[Depends(require_token)])
 

@@ -1,5 +1,4 @@
 # app/routes/download.py
-import logging
 import unicodedata
 import re
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -11,8 +10,9 @@ from typing import Optional
 from app.auth import require_token
 from app.database import get_database
 from app.config import settings
+from app.logging_config import configure_named_logger
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('route_download')
 
 router = APIRouter(dependencies=[Depends(require_token)])
 

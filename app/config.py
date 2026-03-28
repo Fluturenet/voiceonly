@@ -3,9 +3,9 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from typing import Optional
-import logging
+from app.logging_config import configure_named_logger
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('core_config')
 
 # Load environment variables from .env file
 load_dotenv()

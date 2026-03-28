@@ -24,7 +24,7 @@ from app.constants import (
 from app.error_handlers import handle_download_error, handle_extraction_error
 from app.logging_config import configure_named_logger
 
-logger = configure_named_logger('youtube-worker')
+logger = configure_named_logger('app_worker')
 
 # Global variables
 scheduler = None

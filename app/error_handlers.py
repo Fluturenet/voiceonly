@@ -1,10 +1,10 @@
 # app/error_handlers.py
 """Centralized error handling utilities"""
 
-import logging
 import yt_dlp
+from app.logging_config import configure_named_logger
 
-logger = logging.getLogger('voiceonly')
+logger = configure_named_logger('core_error_handlers')
 
 
 def handle_download_error(error: Exception, video_id: str, channel_name: str) -> bool:

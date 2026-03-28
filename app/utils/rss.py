@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Optional, Dict
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from xml.sax.saxutils import unescape
 import email.utils
 from app.config import settings
 
@@ -157,4 +158,5 @@ def generate_podcast_feed(
     
     # Remove XML declaration (we'll add our own)
     lines = pretty_xml.split('\n')[1:]  # Skip first line with XML declaration
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + '\n'.join(lines)
+    xml_ret = '<?xml version="1.0" encoding="UTF-8"?>\n' + '\n'.join(lines)
+    return unescape(xml_ret,{"&amp:":"&"})

@@ -85,7 +85,7 @@
             const progressBar = document.getElementById('scan-progress-bar');
 
             if (data.scanning) {
-                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} canali, ${data.metrics.videos_downloaded} video scaricati)`;
+                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} / ${data.metrics.channels_found} canali scansionati)`;
                 stopBtn.style.display = 'inline-block';
 
                 // Calcola progresso approssimativo

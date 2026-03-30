@@ -4,6 +4,27 @@ import logging
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+class DedupFilter(logging.Filter):
+    def __init__(self):
+        super().__init__()
+        self.last_msg = None
+        self.count = 0
+
+    def filter(self, record):
+        current_msg = record.getMessage()
+        if current_msg == self.last_msg:
+            self.count += 1
+            if self.count % 10 == 0:
+                self.print_msg(current_msg)
+            return False
+        else:
+            if self.count > 0:
+                self.print_msg(current_msg)   
+                self.count = 0
+            self.last_msg = current_msg
+            return True
+    def print_msg(self, msg:str):
+        print(f"[last message repeated {self.count} times] {msg}")
 
 class ColorFormatter(logging.Formatter):
     COLORS = {
@@ -55,4 +76,5 @@ def configure_uvicorn_loggers(level: int = logging.INFO) -> None:
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         logger.setLevel(level)
+        logger.addFilter(DedupFilter())
         logger.propagate = False

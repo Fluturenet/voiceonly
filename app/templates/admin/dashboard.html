@@ -85,7 +85,7 @@
             const progressBar = document.getElementById('scan-progress-bar');
 
             if (data.scanning) {
-                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} ${data.metrics.channels_found} video scaricati)`;
+                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} ${data.metrics.channels_found} canali scaricati)`;
                 stopBtn.style.display = 'inline-block';
 
                 // Calcola progresso approssimativo
@@ -120,63 +120,45 @@
 </script>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2>Canali YouTube Monitorati</h2>
-        <a href="/admin/channels/add" class="btn btn-success">+ Aggiungi Canale</a>
+    <h2>Canali YouTube Monitorati</h2>
+
+    <div class="stats-grid" style="margin-top: 1rem;">
+        {% for channel in channels %}
+        <div class="stat-card" style="text-align: left;">
+            <h3 style="margin-bottom: 0.75rem;">{{ channel.name or 'Sconosciuto' }}</h3>
+            <p style="margin-bottom: 0.5rem;">
+                {% if channel.friendly_name %}
+                <span class="badge badge-warning" style="width: stretch;">{{ channel.friendly_name }}</span>
+                {% else %}
+                <span class="badge badge-warning" style="width: stretch;">Non impostato</span>
+                {% endif %}
+            </p>
+            {#<p style="margin-bottom: 0.5rem;">
+                <strong>URL:</strong>
+                <a href="{{ channel.url }}" target="_blank" rel="noopener">{{ channel.url|truncate(30) }}</a>
+            </p>#}
+            <p style="margin-bottom: 0.5rem;"><strong>Video:</strong> {{ channel.video_count }}</p>
+            {#<p style="margin-bottom: 0.75rem;"><strong>Ultimo Scan:</strong> {{ channel.last_scan }}</p>#}
+            <p style="margin-bottom: 1rem;width: stretch;">
+                {% if channel.active %}
+                    <span class="badge badge-success" style="width: stretch;">Attivo</span>
+                {% else %}
+                    <span class="badge badge-danger" style="width: stretch;">Disattivo</span>
+                {% endif %}
+            </p>
+            <a href="/admin/channels/{{ channel.id }}" class="btn">Vedi</a>
+        </div>
+        {% endfor %}
+
+        <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem;">
+            <h3>Aggiungi Canale</h3>
+            <a href="/admin/channels/add" class="btn btn-success">+ Aggiungi Canale</a>
+        </div>
     </div>
 
-    {% if channels %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Canale</th>
-                <th>Nome amichevole</th> <!-- Nuova colonna -->
-                <th>URL</th>
-                <th>Video</th>
-                <th>Ultimo Scan</th>
-                <th>Attivo</th>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for channel in channels %}
-            <tr>
-                <td>
-                    <strong>{{ channel.name or 'Sconosciuto' }}</strong>
-                </td>
-                <td>
-                    {% if channel.friendly_name %}
-                    <span class="badge badge-warning">{{ channel.friendly_name }}</span>
-                    {% else %}
-                    <span class="badge badge-warning">Non impostato</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{{ channel.url }}" target="_blank" rel="noopener">
-                        {{ channel.url|truncate(30) }}
-                    </a>
-                </td>
-                <td>{{ channel.video_count }}</td>
-                <td>{{ channel.last_scan }}</td>
-                <td>
-                    {% if channel.active %}
-                        <span class="badge badge-success">Attivo</span>
-                    {% else %}
-                        <span class="badge badge-secondary">Disattivo</span>
-                    {% endif %}
-                </td>
-                <td class="actions">
-                    <a href="/admin/channels/{{ channel.id }}" class="btn">Vedi</a>
-                    <!-- altri pulsanti -->
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+    {% if not channels %}
+    <p style="text-align: center; color: #7f8c8d; padding-top: 1rem;">
         Nessun canale configurato.
-        <a href="/admin/channels/add">Aggiungi il primo canale</a>
     </p>
     {% endif %}
 </div>

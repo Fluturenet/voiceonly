@@ -90,7 +90,11 @@
                     <td>{% if video.upload_date %}{{ video.upload_date.strftime('%d/%m/%Y %H:%M:%S') }}{% else %}-{% endif %}</td>
                     <td>{{ (video.file_size / 1024 / 1024)|round(1) }} MB</td>
                     <td>
-                        <a href="{{ request.url_for('download_audio', video_id=video.video_id) }}" class="btn" target="_blank">🎵 Ascolta</a>
+                        {% if video.video_id %}
+                        <a href="{{ request.url_for('download_audio', video_id=video.video_id) }}?token={{ token }}" class="btn" target="_blank">🎵 Ascolta</a>
+                        {% else %}
+                        <span class="badge badge-warning">ID mancante</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

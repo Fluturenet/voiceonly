@@ -515,8 +515,10 @@ async def channel_detail(request: Request, channel_id: str):
                 upload_date = None
 
         videos.append({
+            "video_id": video.get("video_id") or video.get("id") or "",
             "title": video.get("title", "Unknown"),
             "channel_name": video.get("channel_name", "Unknown"),
+            "thumbnail_url": video.get("thumbnail_url") or video.get("thumbnail"),
             "duration": video.get("duration", 0),
             "upload_date": upload_date,
             "file_size": video.get("file_size", 0)
@@ -530,7 +532,8 @@ async def channel_detail(request: Request, channel_id: str):
         context={
             "request": request,
             "channel": channel,
-            "videos": videos
+            "videos": videos,
+            "token": settings.TOKEN
         }
     )
 

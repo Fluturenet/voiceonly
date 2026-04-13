@@ -37,6 +37,9 @@ class Settings:
     # Reverse proxy
     BEHIND_PROXY: bool = os.getenv("BEHIND_PROXY", "False").lower() == "true"
     PROXY_PATH: str = os.getenv("PROXY_PATH", "").rstrip("/")
+    TRUSTED_HOSTS: list = [
+        h.strip() for h in os.getenv("TRUSTED_HOSTS", "").split(",") if h.strip()
+    ] or ["*"]
 
     # Worker settings
     SCAN_INTERVAL_HOURS: int = int(os.getenv("SCAN_INTERVAL_HOURS", "6"))

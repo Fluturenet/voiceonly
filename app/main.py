@@ -66,7 +66,8 @@ app = FastAPI(
 # When running behind a reverse proxy, trust forwarded headers
 if settings.BEHIND_PROXY:
     app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
-    logger.info(f"🔀 Running behind proxy, root_path='{_root_path}'")
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.TRUSTED_HOSTS)
+    logger.info(f"🔀 Running behind proxy, root_path='{_root_path}', trusted_hosts={settings.TRUSTED_HOSTS}")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

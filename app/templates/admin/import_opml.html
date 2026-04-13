@@ -40,7 +40,7 @@
 
         <div style="display: flex; gap: 1rem;">
             <button type="submit" class="btn btn-success">✅ Importa OPML</button>
-            <a href="/admin" class="btn btn-secondary">❌ Annulla</a>
+            <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-secondary">❌ Annulla</a>
         </div>
     </form>
 </div>

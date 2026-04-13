@@ -33,7 +33,7 @@
             <h3>Scan Manuale</h3>
             <p>Avvia una scansione immediata di tutti i canali</p>
         </div>
-        <a href="/admin/scan-now" class="btn btn-success"
+        <a href="{{ request.url_for('trigger_scan') }}" class="btn btn-success"
             onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
             🔄 Avvia Scan Ora
         </a>
@@ -47,8 +47,8 @@
             <p>Gestisci i tuoi podcast tramite file OPML</p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <a href="/admin/opml/export" class="btn btn-primary">📥 Scarica OPML</a>
-            <a href="/admin/opml/import-form" class="btn btn-info">📤 Carica OPML</a>
+            <a href="{{ request.url_for('export_opml') }}" class="btn btn-primary">📥 Scarica OPML</a>
+            <a href="{{ request.url_for('import_opml_form') }}" class="btn btn-info">📤 Carica OPML</a>
         </div>
     </div>
 </div>
@@ -77,7 +77,7 @@
     // Poll per lo stato dello scan
     async function checkScanStatus() {
         try {
-            const response = await fetch('/admin/scan-status');
+            const response = await fetch('{{ request.url_for("scan_status") }}');
             const data = await response.json();
 
             const statusDiv = document.getElementById('scan-status');
@@ -110,7 +110,7 @@
     // Ferma scan
     document.getElementById('stop-scan')?.addEventListener('click', async () => {
         if (confirm('Fermare lo scan in corso?')) {
-            await fetch('/admin/scan-stop', { method: 'POST' });
+            await fetch('{{ request.url_for("stop_scan_route") }}', { method: 'POST' });
         }
     });
 
@@ -146,13 +146,13 @@
                     <span class="badge badge-danger" style="width: stretch;">Disattivo</span>
                 {% endif %}
             </p>
-            <a href="/admin/channels/{{ channel.id }}" class="btn">Vedi</a>
+            <a href="{{ request.url_for('channel_detail', channel_id=channel.id) }}" class="btn">Vedi</a>
         </div>
         {% endfor %}
 
         <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem;">
             <h3>Aggiungi Canale</h3>
-            <a href="/admin/channels/add" class="btn btn-success">+ Aggiungi Canale</a>
+            <a href="{{ request.url_for('add_channel_form') }}" class="btn btn-success">+ Aggiungi Canale</a>
         </div>
     </div>
 

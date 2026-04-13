@@ -332,7 +332,7 @@ async def add_channel_submit(
     # Insert into database
     await db.channels.insert_one(channel_dict)
     
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url=request.url_for("admin_dashboard"), status_code=303)
 
 @router.get("/channels/{channel_id}/edit", response_class=HTMLResponse)
 async def edit_channel_form(request: Request, channel_id: str):
@@ -416,10 +416,13 @@ async def edit_channel_submit(
         {"$set": update_fields}
     )
     
-    return RedirectResponse(url=f"/admin/channels/{channel_id}", status_code=303)
+    return RedirectResponse(
+        url=request.url_for("channel_detail", channel_id=channel_id),
+        status_code=303
+    )
 
 @router.get("/channels/{channel_id}/toggle")
-async def toggle_channel(channel_id: str):
+async def toggle_channel(request: Request, channel_id: str):
     """Enable/disable a channel"""
     db = get_database()
     
@@ -437,10 +440,10 @@ async def toggle_channel(channel_id: str):
         {"$set": {"active": new_status}}
     )
     
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url=request.url_for("admin_dashboard"), status_code=303)
 
 @router.get("/channels/{channel_id}/delete")
-async def delete_channel(channel_id: str):
+async def delete_channel(request: Request, channel_id: str):
     """Remove a channel (but keep downloaded videos)"""
     db = get_database()
     
@@ -453,7 +456,7 @@ async def delete_channel(channel_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Channel not found")
     
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url=request.url_for("admin_dashboard"), status_code=303)
 
 @router.get("/scan-now")
 async def trigger_scan(request: Request):

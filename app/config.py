@@ -37,6 +37,9 @@ class Settings:
     # Reverse proxy
     BEHIND_PROXY: bool = os.getenv("BEHIND_PROXY", "False").lower() == "true"
     PROXY_PATH: str = os.getenv("PROXY_PATH", "").rstrip("/")
+    TRUSTED_PROXY: list = [
+        h.strip() for h in os.getenv("TRUSTED_PROXY", "").split(",") if h.strip()
+    ] or ["127.0.0.1", "::1", "172.16.0.0/12"]
     TRUSTED_HOSTS: list = [
         h.strip() for h in os.getenv("TRUSTED_HOSTS", "").split(",") if h.strip()
     ] or ["*"]

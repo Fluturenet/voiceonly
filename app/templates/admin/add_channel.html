@@ -13,7 +13,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="/admin/channels/add">
+    <form method="POST" action="{{ request.url_for('add_channel_submit') }}">
         <div class="form-group">
             <label for="url">URL del Canale YouTube</label>
             <input type="url" id="url" name="url" required
@@ -39,7 +39,7 @@
 
         <div style="display: flex; gap: 1rem;">
             <button type="submit" class="btn btn-success">Aggiungi Canale</button>
-            <a href="/admin" class="btn">Annulla</a>
+            <a href="{{ request.url_for('admin_dashboard') }}" class="btn">Annulla</a>
         </div>
     </form>
 </div>

@@ -50,7 +50,10 @@
         
         <div style="display: flex; gap: 1rem;">
             <button type="submit" class="btn btn-success">Salva Modifiche</button>
-            <a href="/admin/channels/{{ channel._id }}" class="btn">Annulla</a>
+            <a href="{{ request.url_for('channel_detail', channel_id=channel._id) }}" class="btn">Annulla</a>
+            <a href="{{ request.url_for('delete_channel', channel_id=channel._id) }}"
+               class="btn btn-danger"
+               onclick="return confirm('Eliminare questo canale? I video già scaricati resteranno disponibili.')">🗑️ Elimina Canale</a>
         </div>
     </form>
 </div>

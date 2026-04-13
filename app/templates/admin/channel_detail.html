@@ -29,7 +29,7 @@
         </code>
         <small>Facile da ricordare e digitare</small>
         {% if not channel.friendly_name %}
-        <br><small class="badge badge-warning">Nessun nome amichevole impostato - <a href="/admin/channels/{{ channel._id }}/edit">imposta ora</a></small>
+        <br><small class="badge badge-warning">Nessun nome amichevole impostato - <a href="{{ request.url_for('edit_channel_form', channel_id=channel._id) }}">imposta ora</a></small>
         {% endif %}
     </div>
     
@@ -53,7 +53,10 @@
         <a href="{{ request.base_url }}podcast/{{ channel.friendly_name or channel._id }}.xml" target="_blank" class="btn">📡 Visualizza Feed (nome)</a>
         <a href="{{ request.base_url }}podcast/{{ channel._id }}.xml" target="_blank" class="btn">📡 Visualizza Feed (MongoDB)</a>
         <a href="{{ request.base_url }}podcast/{{ channel.channel_id }}.xml" target="_blank" class="btn">📡 Visualizza Feed (YouTube)</a>
-        <a href="/admin/channels/{{ channel._id }}/edit" class="btn">✏️ Modifica nome</a>
+        <a href="{{ request.url_for('edit_channel_form', channel_id=channel._id) }}" class="btn">✏️ Modifica nome</a>
+        <a href="{{ request.url_for('delete_channel', channel_id=channel._id) }}"
+           class="btn btn-danger"
+           onclick="return confirm('Eliminare questo canale? I video già scaricati resteranno disponibili.')">🗑️ Elimina Canale</a>
     </div>
 </div>
     
@@ -87,7 +90,7 @@
                     <td>{% if video.upload_date %}{{ video.upload_date.strftime('%d/%m/%Y %H:%M:%S') }}{% else %}-{% endif %}</td>
                     <td>{{ (video.file_size / 1024 / 1024)|round(1) }} MB</td>
                     <td>
-                        <a href="/download/{{ video.video_id }}" class="btn" target="_blank">🎵 Ascolta</a>
+                        <a href="{{ request.url_for('download_audio', video_id=video.video_id) }}" class="btn" target="_blank">🎵 Ascolta</a>
                     </td>
                 </tr>
                 {% endfor %}

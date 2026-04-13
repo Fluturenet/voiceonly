@@ -15,7 +15,7 @@
     <p>Puoi controllare i log per vedere l'avanzamento.</p>
     
     <div style="margin-top: 2rem;">
-        <a href="/admin" class="btn">Torna alla Dashboard</a>
+        <a href="{{ request.url_for('admin_dashboard') }}" class="btn">Torna alla Dashboard</a>
     </div>
 </div>
 {% endblock %}

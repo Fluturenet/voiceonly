@@ -1,7 +1,7 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 import uvicorn
 import logging
@@ -65,9 +65,12 @@ app = FastAPI(
 
 # When running behind a reverse proxy, trust forwarded headers
 if settings.BEHIND_PROXY:
-    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=settings.TRUSTED_PROXY)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.TRUSTED_HOSTS)
-    logger.info(f"🔀 Running behind proxy, root_path='{_root_path}', trusted_hosts={settings.TRUSTED_HOSTS}")
+    logger.info(
+        f"🔀 Running behind proxy, root_path='{_root_path}', "
+        f"trusted_proxy={settings.TRUSTED_PROXY}, trusted_hosts={settings.TRUSTED_HOSTS}"
+    )
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -77,20 +80,10 @@ app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(podcast.router, prefix="/podcast", tags=["podcast"])
 app.include_router(download.router, prefix="/download", tags=["download"])
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
+@app.get("/")
+async def root(request: Request):
     """Redirect to admin panel"""
-    return """
-    <html>
-        <head>
-            <title>VoiceOnly</title>
-            <meta http-equiv="refresh" content="0; URL=/admin" />
-        </head>
-        <body>
-            <p>Redirecting to <a href="/admin">admin panel</a>...</p>
-        </body>
-    </html>
-    """
+    return RedirectResponse(url=request.url_for("admin_dashboard"), status_code=307)
 
 if __name__ == "__main__":
     uvicorn.run(

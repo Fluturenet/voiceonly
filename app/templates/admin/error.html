@@ -21,7 +21,7 @@
     </div>
     
     <div style="margin-top: 2rem;">
-        <a href="/admin" class="btn">🔄 Riprova</a>
+        <a href="{{ request.url_for('admin_dashboard') }}" class="btn">🔄 Riprova</a>
     </div>
 </div>
 {% endblock %}

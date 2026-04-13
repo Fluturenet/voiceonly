@@ -35,8 +35,8 @@
     </p>
 
     <div style="display: flex; gap: 1rem;">
-        <a href="/admin" class="btn btn-primary">👈 Torna alla Dashboard</a>
-        <a href="/admin/channels/add" class="btn btn-secondary">➕ Aggiungi Canale Manuale</a>
+        <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-primary">👈 Torna alla Dashboard</a>
+        <a href="{{ request.url_for('add_channel_form') }}" class="btn btn-secondary">➕ Aggiungi Canale Manuale</a>
     </div>
 </div>
 

@@ -34,6 +34,10 @@ class Settings:
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
     
+    # Reverse proxy
+    BEHIND_PROXY: bool = os.getenv("BEHIND_PROXY", "False").lower() == "true"
+    PROXY_PATH: str = os.getenv("PROXY_PATH", "").rstrip("/")
+
     # Worker settings
     SCAN_INTERVAL_HOURS: int = int(os.getenv("SCAN_INTERVAL_HOURS", "6"))
     

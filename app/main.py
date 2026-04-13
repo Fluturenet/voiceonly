@@ -6,6 +6,9 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
 from app.config import settings
 from app.logging_config import configure_named_logger, configure_uvicorn_loggers
 from app.routes import admin, podcast, download
@@ -51,12 +54,19 @@ async def lifespan(app: FastAPI):
     close_thread_connection()
 
 # Create FastAPI app
+_root_path = settings.PROXY_PATH if settings.BEHIND_PROXY else ""
 app = FastAPI(
     title="VoiceOnly",
     description="Convert YouTube channels to private podcasts",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path=_root_path
 )
+
+# When running behind a reverse proxy, trust forwarded headers
+if settings.BEHIND_PROXY:
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+    logger.info(f"🔀 Running behind proxy, root_path='{_root_path}'")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

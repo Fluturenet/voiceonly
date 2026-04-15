@@ -38,6 +38,10 @@ Main settings are defined in `.env` (copy from `.env.example`):
 | `DOWNLOAD_PATH` | Folder where audio files are saved |
 | `HOST` | Bind address |
 | `PORT` | Service port |
+| `BEHIND_PROXY` | Set to True if running behind a reverse proxy |
+| `PROXY_PATH` | Sub-path prefix if served under a path |
+| `TRUSTED_PROXY` | Comma-separated trusted proxy hosts/IPs |
+| `TRUSTED_HOSTS` | Comma-separated allowed hostnames |
 | `SCAN_INTERVAL_HOURS` | Automatic scan interval |
 | `COOKIES_FILE` | Optional YouTube cookies file path |
 

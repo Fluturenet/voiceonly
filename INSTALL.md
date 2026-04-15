@@ -122,6 +122,10 @@ sudo systemctl enable mongod --now
 | `DOWNLOAD_PATH` | `./downloads` | Download folder path |
 | `HOST` | `0.0.0.0` | Bind address |
 | `PORT` | `8000` | HTTP port |
+| `BEHIND_PROXY` | `False` | Running behind a reverse proxy |
+| `PROXY_PATH` | `` | Sub-path prefix for reverse proxy |
+| `TRUSTED_PROXY` | `127.0.0.1,::1,172.16.0.0/12` | Trusted proxy hosts/IPs |
+| `TRUSTED_HOSTS` | `` | Comma-separated allowed hostnames |
 | `SCAN_INTERVAL_HOURS` | `6` | Scheduled scan interval |
 | `COOKIES_FILE` | _(optional)_ | YouTube cookies file path |
 

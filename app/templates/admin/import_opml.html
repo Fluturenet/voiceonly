@@ -4,57 +4,63 @@
 {% block title %}Importa OPML - VoiceOnly{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>📤 Carica File OPML</h2>
-    <p>Importa una lista di podcast da un file OPML. I canali verranno aggiunti alla tua lista.</p>
+<div class="row">
+    <div class="col-lg-8 col-md-12">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Carica File OPML</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Importa una lista di podcast da un file OPML. I canali verranno aggiunti alla tua lista.</p>
 
-    {% if error %}
-    <div style="background-color: #fee; border: 1px solid #f88; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; color: #c00;">
-        <strong>❌ Errore:</strong> {{ error }}
+                {% if error %}
+                <div class="alert alert-danger">
+                    <strong>Errore:</strong> {{ error }}
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" class="mt-4">
+                    <div class="form-group">
+                        <label for="file">File OPML</label>
+                        <input type="file" id="file" name="file" accept=".opml,.xml" class="form-control" required>
+                        <small class="form-text text-muted">Seleziona un file OPML (.opml o .xml)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="friendly_name_prefix">Prefisso Nome (Opzionale)</label>
+                        <input type="text" id="friendly_name_prefix" name="friendly_name_prefix"
+                            placeholder="es. imported" class="form-control">
+                        <small class="form-text text-muted">Se specificato, sara aggiunto come prefisso ai nomi dei canali importati</small>
+                    </div>
+
+                    <div class="d-flex flex-wrap">
+                        <button type="submit" class="btn btn-success mr-2 mb-2">
+                            <i class="fas fa-file-import mr-1"></i> Importa OPML
+                        </button>
+                        <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-secondary mb-2">Annulla</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    {% endif %}
 
-    <form method="post" enctype="multipart/form-data" style="margin-top: 2rem;">
-        <div style="margin-bottom: 1.5rem;">
-            <label for="file" style="display: block; font-weight: bold; margin-bottom: 0.5rem;">
-                File OPML:
-            </label>
-            <input type="file" id="file" name="file" accept=".opml,.xml" required 
-                style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 100%; max-width: 400px;">
-            <small style="display: block; margin-top: 0.5rem; color: #666;">
-                Seleziona un file OPML (.opml o .xml)
-            </small>
+    <div class="col-lg-4 col-md-12">
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title">Informazioni su OPML</h3>
+            </div>
+            <div class="card-body">
+                <p>
+                    OPML (Outline Processor Markup Language) e un formato standard per esportare e importare elenchi di feed RSS/Podcast.
+                </p>
+                <p class="mb-2">Puoi acquisire un file OPML da:</p>
+                <ul class="pl-3 mb-0">
+                    <li>App di podcast come Podcast Addict, AntennaPod, Podverse, ecc.</li>
+                    <li>Servizi di aggregazione come Feedly, Inoreader, ecc.</li>
+                    <li>Esportazioni da altre app di gestione podcast</li>
+                </ul>
+            </div>
         </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <label for="friendly_name_prefix" style="display: block; font-weight: bold; margin-bottom: 0.5rem;">
-                Prefisso Nome (Opzionale):
-            </label>
-            <input type="text" id="friendly_name_prefix" name="friendly_name_prefix" 
-                placeholder="es. imported"
-                style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 100%; max-width: 400px;">
-            <small style="display: block; margin-top: 0.5rem; color: #666;">
-                Se specificato, sarà aggiunto come prefisso ai nomi dei canali importati
-            </small>
-        </div>
-
-        <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-success">✅ Importa OPML</button>
-            <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-secondary">❌ Annulla</a>
-        </div>
-    </form>
-</div>
-
-<div class="card" style="margin-top: 2rem; background-color: #f9f9f9;">
-    <h3>ℹ️ Informazioni su OPML</h3>
-    <p>
-        OPML (Outline Processor Markup Language) è un formato standard per esportare e importare elenchi di feed RSS/Podcast.
-        Puoi acquisire un file OPML da:
-    </p>
-    <ul style="margin: 1rem 0; padding-left: 2rem;">
-        <li>App di podcast come Podcast Addict, AntennaPod, Podverse, ecc.</li>
-        <li>Servizi di aggregazione come Feedly, Inoreader, ecc.</li>
-        <li>Esportazioni da altre app di gestione podcast</li>
-    </ul>
+    </div>
 </div>
 {% endblock %}

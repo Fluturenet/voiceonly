@@ -4,18 +4,21 @@
 {% block title %}Scan Avviato - VoiceOnly{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2 style="color: #27ae60;">✅ Scan Avviato</h2>
-    
-    <div class="alert alert-success">
-        {{ message }}
+<div class="card card-outline card-success">
+    <div class="card-header">
+        <h3 class="card-title">Scan Avviato</h3>
     </div>
-    
-    <p>Lo scan dei canali è stato avviato in background. Questa operazione potrebbe richiedere alcuni minuti.</p>
-    <p>Puoi controllare i log per vedere l'avanzamento.</p>
-    
-    <div style="margin-top: 2rem;">
-        <a href="{{ request.url_for('admin_dashboard') }}" class="btn">Torna alla Dashboard</a>
+    <div class="card-body">
+        <div class="alert alert-success">
+            {{ message }}
+        </div>
+
+        <p>Lo scan dei canali e stato avviato in background. Questa operazione potrebbe richiedere alcuni minuti.</p>
+        <p>Puoi controllare i log per vedere l'avanzamento.</p>
+
+        <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left mr-1"></i> Torna alla Dashboard
+        </a>
     </div>
 </div>
 {% endblock %}

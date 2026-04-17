@@ -4,58 +4,76 @@
 {% block title %}Aggiungi Canale - VoiceOnly{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Aggiungi Nuovo Canale YouTube</h2>
+<div class="row">
+    <div class="col-lg-8 col-md-12">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Aggiungi Nuovo Canale YouTube</h3>
+            </div>
+            <div class="card-body">
 
-    {% if error %}
-    <div class="alert alert-danger">
-        {{ error }}
+                {% if error %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ request.url_for('add_channel_submit') }}">
+                    <div class="form-group">
+                        <label for="url">URL del Canale YouTube</label>
+                        <input type="url" id="url" name="url" class="form-control" required
+                            placeholder="https://youtube.com/c/NomeCanale o https://youtube.com/@NomeCanale"
+                            value="{{ url or '' }}">
+                        <small class="form-text text-muted">
+                            Inserisci l'URL del canale YouTube (es. https://youtube.com/c/NomeCanale o
+                            https://youtube.com/@NomeCanale)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="friendly_name">Nome amichevole (opzionale)</label>
+                        <input type="text" id="friendly_name" name="friendly_name" class="form-control"
+                            placeholder="es. musica, podcast1, A123"
+                            value="{{ friendly_name or '' }}" pattern="[a-zA-Z0-9_-]+"
+                            title="Solo lettere, numeri, trattini e underscore">
+                        <small class="form-text text-muted">
+                            Un nome breve e facile da ricordare per questo canale.
+                            Se non lo specifichi, verra generato automaticamente dal nome del canale.
+                            Potrai usare questo nome nell'URL del feed: /podcast/NAMEFRIENDLY.xml
+                        </small>
+                    </div>
+
+                    <div class="d-flex flex-wrap">
+                        <button type="submit" class="btn btn-success mr-2 mb-2">
+                            <i class="fas fa-plus mr-1"></i> Aggiungi Canale
+                        </button>
+                        <a href="{{ request.url_for('admin_dashboard') }}" class="btn btn-secondary mb-2">Annulla</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    {% endif %}
 
-    <form method="POST" action="{{ request.url_for('add_channel_submit') }}">
-        <div class="form-group">
-            <label for="url">URL del Canale YouTube</label>
-            <input type="url" id="url" name="url" required
-                placeholder="https://youtube.com/c/NomeCanale o https://youtube.com/@NomeCanale"
-                value="{{ url or '' }}">
-            <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
-                Inserisci l'URL del canale YouTube (es. https://youtube.com/c/NomeCanale o
-                https://youtube.com/@NomeCanale)
-            </small>
+    <div class="col-lg-4 col-md-12">
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title">Come trovare l'URL del canale</h3>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0 pl-3">
+                    <li>Vai su YouTube e cerca il canale</li>
+                    <li>Clicca sul nome del canale per andare alla sua pagina</li>
+                    <li>
+                        L'URL nella barra degli indirizzi sara qualcosa come:
+                        <ul class="mt-2 pl-3 mb-0">
+                            <li><code>https://youtube.com/c/NomeCanale</code></li>
+                            <li><code>https://youtube.com/@NomeCanale</code></li>
+                            <li><code>https://youtube.com/channel/UC...</code></li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="friendly_name">Nome amichevole (opzionale)</label>
-            <input type="text" id="friendly_name" name="friendly_name" placeholder="es. musica, podcast1, A123"
-                value="{{ friendly_name or '' }}" pattern="[a-zA-Z0-9_-]+"
-                title="Solo lettere, numeri, trattini e underscore">
-            <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
-                Un nome breve e facile da ricordare per questo canale.
-                Se non lo specifichi, verrà generato automaticamente dal nome del canale.
-                Potrai usare questo nome nell'URL del feed: /podcast/NAMEFRIENDLY.xml
-            </small>
-        </div>
-
-        <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-success">Aggiungi Canale</button>
-            <a href="{{ request.url_for('admin_dashboard') }}" class="btn">Annulla</a>
-        </div>
-    </form>
-</div>
-
-<div class="card">
-    <h3>Come trovare l'URL del canale</h3>
-    <ul style="margin-left: 1.5rem;">
-        <li>Vai su YouTube e cerca il canale</li>
-        <li>Clicca sul nome del canale per andare alla sua pagina</li>
-        <li>L'URL nella barra degli indirizzi sarà qualcosa come:
-            <ul style="margin-left: 2rem; margin-top: 0.5rem;">
-                <li><code>https://youtube.com/c/NomeCanale</code></li>
-                <li><code>https://youtube.com/@NomeCanale</code></li>
-                <li><code>https://youtube.com/channel/UC...</code></li>
-            </ul>
-        </li>
-    </ul>
+    </div>
 </div>
 {% endblock %}

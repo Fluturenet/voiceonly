@@ -3,171 +3,205 @@
 
 {% block title %}Dashboard - VoiceOnly{% endblock %}
 
+{% block extra_css %}
+<style>
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .channel-card .card-title {
+        min-height: 2.8rem;
+    }
+
+    .feed-badge {
+        width: 100%;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .scan-progress {
+        height: 20px;
+    }
+
+    .scan-progress-bar {
+        width: 0%;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="stats-grid">
-    <div class="stat-card">
-        <h3>Canali Attivi</h3>
-        <div class="number">{{ stats.active_channels }}</div>
+<div class="row">
+    <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ stats.active_channels }}</h3>
+                <p>Canali Attivi</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-podcast"></i>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Video Scaricati</h3>
-        <div class="number">{{ stats.total_videos }}</div>
+    <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>{{ stats.total_videos }}</h3>
+                <p>Video Scaricati</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-download"></i>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Spazio Occupato</h3>
-        <div class="number">{{ stats.total_size_gb }} GB</div>
+    <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>{{ stats.total_size_gb }} GB</h3>
+                <p>Spazio Occupato</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-hdd"></i>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Spazio Libero</h3>
-        <div class="number">{{ stats.disk_free_gb }} GB</div>
-    </div>    
-    <div class="stat-card">
-        <h3>Ultimo Scan</h3>
-        <div class="number">{{ stats.last_scan_hours }}h fa</div>
+    <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3>{{ stats.disk_free_gb }} GB</h3>
+                <p>Spazio Libero</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-database"></i>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="card" style="margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <h3>Scan Manuale</h3>
-            <p>Avvia una scansione immediata di tutti i canali</p>
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card card-primary card-outline">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h3 class="card-title mb-1">Scan Manuale</h3>
+                    <div class="text-muted">Avvia una scansione immediata di tutti i canali</div>
+                </div>
+                <a href="{{ request.url_for('trigger_scan') }}" class="btn btn-success"
+                   onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
+                    <i class="fas fa-sync-alt mr-1"></i> Avvia Scan Ora
+                </a>
+            </div>
         </div>
-        <a href="{{ request.url_for('trigger_scan') }}" class="btn btn-success"
-            onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
-            🔄 Avvia Scan Ora
+    </div>
+    <div class="col-xl-4 col-lg-5">
+        <div class="card card-info card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Ultimo Scan</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">{{ stats.last_scan_hours }}h</div>
+                <div class="text-muted">dall'ultimo completamento</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-info card-outline">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h3 class="card-title mb-1">Importa/Esporta OPML</h3>
+            <div class="text-muted">Gestisci i tuoi podcast tramite file OPML</div>
+        </div>
+        <div class="btn-group">
+            <a href="{{ request.url_for('export_opml') }}" class="btn btn-primary">
+                <i class="fas fa-file-download mr-1"></i> Scarica OPML
+            </a>
+            <a href="{{ request.url_for('import_opml_form') }}" class="btn btn-info">
+                <i class="fas fa-file-upload mr-1"></i> Carica OPML
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card card-secondary card-outline">
+    <div class="card-header">
+        <h3 class="card-title">Stato Scan</h3>
+    </div>
+    <div id="scan-panel"
+         data-scan-status-url="{{ request.url_for('scan_status') }}"
+         data-stop-scan-url="{{ request.url_for('stop_scan_route') }}"
+         class="card-body d-flex justify-content-between align-items-center flex-wrap">
+        <div class="flex-grow-1 mr-3">
+            <div id="scan-status" class="mb-2">Nessuno scan in corso</div>
+            <div id="scan-progress" class="progress scan-progress">
+                <div id="scan-progress-bar" class="progress-bar progress-bar-striped bg-primary scan-progress-bar"
+                     role="progressbar"></div>
+                </div>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <button id="stop-scan" class="btn btn-danger d-none">
+                <i class="fas fa-stop mr-1"></i> Ferma Scan
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card card-outline card-primary">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="card-title">Canali YouTube Monitorati</h3>
+        <a href="{{ request.url_for('add_channel_form') }}" class="btn btn-success btn-sm">
+            <i class="fas fa-plus mr-1"></i> Aggiungi Canale
         </a>
     </div>
-</div>
-
-<div class="card" style="margin-bottom: 2rem; background-color: #f0f8ff;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <h3>📥 Importa/Esporta OPML</h3>
-            <p>Gestisci i tuoi podcast tramite file OPML</p>
-        </div>
-        <div style="display: flex; gap: 0.5rem;">
-            <a href="{{ request.url_for('export_opml') }}" class="btn btn-primary">📥 Scarica OPML</a>
-            <a href="{{ request.url_for('import_opml_form') }}" class="btn btn-info">📤 Carica OPML</a>
-        </div>
-    </div>
-</div>
-
-<!-- Aggiungi nel dashboard.html, dopo il pulsante scan-now -->
-
-<div class="card" style="margin-bottom: 2rem; background-color: #f8f9fa;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-        <div>
-            <h3>🔄 Scan</h3>
-            <div id="scan-status">Nessuno scan in corso</div>
-            <div id="scan-progress" style="margin-top: 10px;">
-                <div style="width: 100%; background-color: #e0e0e0; border-radius: 4px;">
-                    <div id="scan-progress-bar"
-                        style="width: 0%; height: 20px; background-color: #3498db; border-radius: 4px;"></div>
+    <div class="card-body">
+        <div class="row">
+        {% for channel in channels %}
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+            <div class="card channel-card card-outline {% if channel.active %}card-success{% else %}card-danger{% endif %}">
+                <div class="card-body">
+                    <h4 class="card-title mb-2">{{ channel.name or 'Sconosciuto' }}</h4>
+                    <p class="mb-2">
+                        {% if channel.friendly_name %}
+                        <span class="badge badge-warning feed-badge">{{ channel.friendly_name }}</span>
+                        {% else %}
+                        <span class="badge badge-warning feed-badge">Non impostato</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-2"><strong>Video:</strong> {{ channel.video_count }}</p>
+                    <p class="mb-3">
+                        {% if channel.active %}
+                            <span class="badge badge-success feed-badge">Attivo</span>
+                        {% else %}
+                            <span class="badge badge-danger feed-badge">Disattivo</span>
+                        {% endif %}
+                    </p>
+                    <a href="{{ request.url_for('channel_detail', channel_id=channel.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye mr-1"></i> Vedi
+                    </a>
                 </div>
             </div>
         </div>
-        <div>
-            <button id="stop-scan" class="btn btn-danger" style="display: none;">⏹️ Ferma Scan</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Poll per lo stato dello scan
-    async function checkScanStatus() {
-        try {
-            const response = await fetch('{{ request.url_for("scan_status") }}');
-            const data = await response.json();
-
-            const statusDiv = document.getElementById('scan-status');
-            const stopBtn = document.getElementById('stop-scan');
-            const progressBar = document.getElementById('scan-progress-bar');
-
-            if (data.scanning) {
-                statusDiv.innerHTML = `Scan in corso... (${data.metrics.channels_scanned} ${data.metrics.channels_found} canali scaricati)`;
-                stopBtn.style.display = 'inline-block';
-
-                // Calcola progresso approssimativo
-                if (data.metrics.channels_found > 0) {
-                    const percent = (data.metrics.channels_scanned / data.metrics.channels_found) * 100;
-                    progressBar.style.width = percent + '%';
-                }
-            } else {
-                if (data.metrics.last_run_end) {
-                    statusDiv.innerHTML = `Ultimo scan: ${new Date(data.metrics.last_run_end).toLocaleString()} - Durata: ${data.metrics.last_run_duration.toFixed(0)}s`;
-                } else {
-                    statusDiv.innerHTML = 'Nessuno scan in corso';
-                }
-                stopBtn.style.display = 'none';
-                progressBar.style.width = '0%';
-            }
-        } catch (error) {
-            console.error('Error checking scan status:', error);
-        }
-    }
-
-    // Ferma scan
-    document.getElementById('stop-scan')?.addEventListener('click', async () => {
-        if (confirm('Fermare lo scan in corso?')) {
-            await fetch('{{ request.url_for("stop_scan_route") }}', { method: 'POST' });
-        }
-    });
-
-    // Aggiorna ogni 2 secondi
-    setInterval(checkScanStatus, 2000);
-    checkScanStatus();
-</script>
-
-<div class="card">
-    <h2>Canali YouTube Monitorati</h2>
-
-    <div class="stats-grid" style="margin-top: 1rem;">
-        {% for channel in channels %}
-        <div class="stat-card" style="text-align: left;">
-            <h3 style="margin-bottom: 0.75rem;">{{ channel.name or 'Sconosciuto' }}</h3>
-            <p style="margin-bottom: 0.5rem;">
-                {% if channel.friendly_name %}
-                <span class="badge badge-warning" style="width: stretch;">{{ channel.friendly_name }}</span>
-                {% else %}
-                <span class="badge badge-warning" style="width: stretch;">Non impostato</span>
-                {% endif %}
-            </p>
-            {#<p style="margin-bottom: 0.5rem;">
-                <strong>URL:</strong>
-                <a href="{{ channel.url }}" target="_blank" rel="noopener">{{ channel.url|truncate(30) }}</a>
-            </p>#}
-            <p style="margin-bottom: 0.5rem;"><strong>Video:</strong> {{ channel.video_count }}</p>
-            {#<p style="margin-bottom: 0.75rem;"><strong>Ultimo Scan:</strong> {{ channel.last_scan }}</p>#}
-            <p style="margin-bottom: 1rem;width: stretch;">
-                {% if channel.active %}
-                    <span class="badge badge-success" style="width: stretch;">Attivo</span>
-                {% else %}
-                    <span class="badge badge-danger" style="width: stretch;">Disattivo</span>
-                {% endif %}
-            </p>
-            <a href="{{ request.url_for('channel_detail', channel_id=channel.id) }}" class="btn">Vedi</a>
-        </div>
         {% endfor %}
-
-        <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem;">
-            <h3>Aggiungi Canale</h3>
-            <a href="{{ request.url_for('add_channel_form') }}" class="btn btn-success">+ Aggiungi Canale</a>
         </div>
-    </div>
 
-    {% if not channels %}
-    <p style="text-align: center; color: #7f8c8d; padding-top: 1rem;">
-        Nessun canale configurato.
-    </p>
-    {% endif %}
+        {% if not channels %}
+        <div class="alert alert-info mb-0">
+            Nessun canale configurato.
+        </div>
+        {% endif %}
+    </div>
 </div>
 
-<div class="card">
-    <h2>Ultimi Video Scaricati</h2>
+<div class="card card-outline card-secondary">
+    <div class="card-header">
+        <h3 class="card-title">Ultimi Video Scaricati</h3>
+    </div>
+    <div class="card-body p-0">
 
     {% if recent_videos %}
-    <table class="table">
+    <div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
         <thead>
             <tr>
                 <th>Titolo</th>
@@ -189,10 +223,16 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
-    <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+    <div class="alert alert-light m-3">
         Nessun video scaricato ancora. I video verranno scaricati automaticamente.
-    </p>
+    </div>
     {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', path='js/admin/dashboard.js') }}"></script>
 {% endblock %}

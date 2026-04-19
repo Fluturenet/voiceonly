@@ -28,11 +28,27 @@
     .scan-progress-bar {
         width: 0%;
     }
+
+    .scan-kpi-box {
+        background: #f4f6f9;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.9rem 1rem;
+        height: 100%;
+    }
+
+    .scan-status-wrap {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.9rem 1rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Desktop view: 4 separate small-box -->
+<div class="row d-none d-md-flex">
     <div class="col-lg-3 col-md-6 col-sm-12">
         <div class="small-box bg-info">
             <div class="inner">
@@ -79,70 +95,96 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-xl-8 col-lg-7">
-        <div class="card card-primary card-outline">
-            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                    <h3 class="card-title mb-1">Scan Manuale</h3>
-                    <div class="text-muted">Avvia una scansione immediata di tutti i canali</div>
+<!-- Mobile view: aggregated metrics in single card -->
+<div class="row d-md-none">
+    <div class="col-12">
+        <div class="card card-outline card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Metriche Principali</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center mb-3">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #17a2b8;">{{ stats.active_channels }}</div>
+                            <div class="text-muted small">Canali Attivi</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center mb-3">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #28a745;">{{ stats.total_videos }}</div>
+                            <div class="text-muted small">Video Scaricati</div>
+                        </div>
+                    </div>
                 </div>
-                <a href="{{ request.url_for('trigger_scan') }}" class="btn btn-success"
-                   onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
-                    <i class="fas fa-sync-alt mr-1"></i> Avvia Scan Ora
-                </a>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #ffc107;">{{ stats.total_size_gb }} GB</div>
+                            <div class="text-muted small">Spazio Occupato</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #007bff;">{{ stats.disk_free_gb }} GB</div>
+                            <div class="text-muted small">Spazio Libero</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-4 col-lg-5">
-        <div class="card card-info card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Ultimo Scan</h3>
+</div>
+
+<div class="card card-primary card-outline">
+    <div class="card-header d-flex justify-content-end align-items-center">
+        <h3 class="card-title mb-0 mr-auto">Gestione Scan</h3>
+        <a href="{{ request.url_for('trigger_scan') }}" class="btn btn-success btn-sm"
+           title="Avvia Scan Ora"
+           onclick="return confirm('Avviare lo scan manuale? Potrebbe richiedere alcuni minuti.')">
+            <i class="fas fa-sync-alt"></i>
+        </a>
+    </div>
+    <div id="scan-panel"
+         data-scan-status-url="{{ request.url_for('scan_status') }}"
+         data-stop-scan-url="{{ request.url_for('stop_scan_route') }}"
+         class="card-body">
+        <div class="row align-items-stretch">
+            <div class="col-12 col-lg-4 mb-3 mb-lg-0 d-flex flex-column">
+                <div class="scan-kpi-box h-100">
+                    <div class="text-muted small">Ultimo Scan</div>
+                    <div class="metric-value mb-1">{{ stats.last_scan_hours }}h</div>
+                    <div class="text-muted">dall'ultimo completamento</div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="metric-value">{{ stats.last_scan_hours }}h</div>
-                <div class="text-muted">dall'ultimo completamento</div>
+            <div class="col-12 col-lg-8 d-flex flex-column">
+                <div class="scan-status-wrap h-100">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                        <div id="scan-status" class="mb-2 mb-md-0">Nessuno scan in corso</div>
+                        <button id="stop-scan" class="btn btn-danger btn-sm d-none">
+                            <i class="fas fa-stop mr-1"></i> Ferma Scan
+                        </button>
+                    </div>
+                    <div id="scan-progress" class="progress scan-progress">
+                        <div id="scan-progress-bar" class="progress-bar progress-bar-striped bg-primary scan-progress-bar"
+                             role="progressbar"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="card card-info card-outline">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-        <div>
-            <h3 class="card-title mb-1">Importa/Esporta OPML</h3>
-            <div class="text-muted">Gestisci i tuoi podcast tramite file OPML</div>
-        </div>
-        <div class="btn-group">
-            <a href="{{ request.url_for('export_opml') }}" class="btn btn-primary">
-                <i class="fas fa-file-download mr-1"></i> Scarica OPML
+    <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mb-0 mr-auto">Importa/Esporta OPML</h3>
+        <div class="d-flex" style="gap: 0.5rem;">
+            <a href="{{ request.url_for('export_opml') }}" class="btn btn-primary btn-sm" title="Scarica OPML">
+                <i class="fas fa-file-download"></i>
             </a>
-            <a href="{{ request.url_for('import_opml_form') }}" class="btn btn-info">
-                <i class="fas fa-file-upload mr-1"></i> Carica OPML
+            <a href="{{ request.url_for('import_opml_form') }}" class="btn btn-info btn-sm" title="Carica OPML">
+                <i class="fas fa-file-upload"></i>
             </a>
-        </div>
-    </div>
-</div>
-
-<div class="card card-secondary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">Stato Scan</h3>
-    </div>
-    <div id="scan-panel"
-         data-scan-status-url="{{ request.url_for('scan_status') }}"
-         data-stop-scan-url="{{ request.url_for('stop_scan_route') }}"
-         class="card-body d-flex justify-content-between align-items-center flex-wrap">
-        <div class="flex-grow-1 mr-3">
-            <div id="scan-status" class="mb-2">Nessuno scan in corso</div>
-            <div id="scan-progress" class="progress scan-progress">
-                <div id="scan-progress-bar" class="progress-bar progress-bar-striped bg-primary scan-progress-bar"
-                     role="progressbar"></div>
-                </div>
-        </div>
-        <div class="mt-2 mt-md-0">
-            <button id="stop-scan" class="btn btn-danger d-none">
-                <i class="fas fa-stop mr-1"></i> Ferma Scan
-            </button>
         </div>
     </div>
 </div>

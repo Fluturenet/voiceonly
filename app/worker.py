@@ -1,4 +1,13 @@
 # app/worker.py - Modifica le funzioni che usano il database
+#
+# Channel document example:
+# {
+#   "url": "https://www.youtube.com/@ExampleChannel",
+#   "active": true,
+#   "include_videos": true,
+#   "include_streams": false
+# }
+# Defaults (when fields are absent): include_videos=True, include_streams=False
 
 import asyncio
 import threading
@@ -12,7 +21,6 @@ import queue
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import yt_dlp
 
 from app.database import get_database, close_thread_connection, is_database_connected
 from app.config import settings
@@ -23,6 +31,8 @@ from app.constants import (
 )
 from app.error_handlers import handle_download_error, handle_extraction_error
 from app.logging_config import configure_named_logger
+from app.util.youtube.yt_dlp_client import YtDlpClient
+from app.util.youtube.url_builder import build_channel_tab_url
 
 logger = configure_named_logger('app_worker')
 
@@ -59,207 +69,9 @@ def sanitize_filename(filename: Optional[str]) -> str:
     filename = filename.strip('. ')
     return filename or "unknown_channel"
 
-class YouTubeDownloader:
-    """Synchronous YouTube downloader for use in threads"""
-    
-    def __init__(self, download_path: Path, cookies_file: Optional[str] = None):
-        self.download_path = download_path
-        self.cookies_file = cookies_file
-        
-        # Use centralized config with cookies_file override
-        self.info_opts = {**YDL_INFO_OPTS, 'cookiefile': cookies_file}
-        self.flat_opts = {**YDL_FLAT_OPTS, 'cookiefile': cookies_file}
-        self.download_opts = {
-            **YDL_DOWNLOAD_OPTS,
-            'cookiefile': cookies_file,
-        }
-        
-        # Bulk download options (will be customized per channel)
-        self.bulk_download_opts = {
-            **YDL_BULK_DOWNLOAD_OPTS,
-            'cookiefile': cookies_file,
-        }
-    
-    def _extract_original_title(self, info: Dict) -> str:
-        """Extract original title from video info"""
-        if info.get('original_title'):
-            return info['original_title']
-        
-        if info.get('language') and info['language'] != 'en':
-            return info.get('title', 'Unknown')
-        
-        if info.get('track') and info.get('artist'):
-            return f"{info['artist']} - {info['track']}"
-        
-        return info.get('title', 'Unknown')
-    
-    def get_channel_videos(self, channel_url: str, limit: int = 10) -> tuple:
-        """Get channel info and recent videos (synchronous)"""
-        try:
-            # Ensure we're getting the videos tab
-            if not channel_url.endswith('/videos'):
-                if '/videos' not in channel_url:
-                    channel_url = channel_url.rstrip('/') + '/videos'
-            
-            logger.debug(f"Fetching channel videos from: {channel_url}")
-            
-            with yt_dlp.YoutubeDL(self.flat_opts) as ydl:
-                info = ydl.extract_info(channel_url, download=False)
-                
-                if info is None:
-                    return {}, []
-                
-                channel_info = {
-                    'id': info.get('channel_id'),
-                    'name': info.get('channel', info.get('uploader', 'Unknown')),
-                    'url': channel_url,
-                    'description': info.get('description'),
-                    'thumbnails': info.get('thumbnails'),
-                    'thumbnail': info.get('thumbnail'),
-                    'subscriber_count': info.get('channel_follower_count'),
-                    'video_count': info.get('channel_video_count'),
-                }
-                
-                videos = []
-                entries = info.get('entries', [])
-                
-                for entry in entries[:limit]:
-                    if entry and entry.get('id'):
-                        videos.append({
-                            'id': entry.get('id'),
-                            'title': entry.get('title', 'Unknown'),
-                            'url': f"https://youtube.com/watch?v={entry.get('id')}",
-                            'duration': entry.get('duration'),
-                            'upload_date': entry.get('upload_date'),
-                            'view_count': entry.get('view_count'),
-                            'channel': entry.get('channel', channel_info['name']),
-                            'channel_id': entry.get('channel_id', channel_info['id']),
-                        })
-                
-                return channel_info, videos
-                
-        except Exception as e:
-            logger.error(f"Error in get_channel_videos: {e}")
-            return {}, []
-    
-    def get_video_metadata(self, video_id: str) -> Optional[Dict]:
-        """Get complete video metadata (synchronous)"""
-        url = f"https://youtube.com/watch?v={video_id}"
-        
-        try:
-            with yt_dlp.YoutubeDL(self.info_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                
-                if info:
-                    if 'original_title' not in info:
-                        info['original_title'] = self._extract_original_title(info)
-                    
-                    if 'formats' in info:
-                        audio_formats = [f for f in info['formats'] if f.get('vcodec') == 'none']
-                        if audio_formats:
-                            info['best_audio_format'] = audio_formats[-1]
-                    
-                    return info
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error in get_video_metadata for {video_id}: {e}")
-            return None
-    
-    def download_audio(self, video_id: str, channel_name: str) -> Optional[Dict]:
-        """Download video audio (synchronous)"""
-        url = f"https://youtube.com/watch?v={video_id}"
-        channel_dir = self.download_path / channel_name
-        channel_dir.mkdir(parents=True, exist_ok=True)
-        
-        opts = self.download_opts.copy()
-        opts['outtmpl'] = str(channel_dir / '%(id)s.%(ext)s')
-        
-        try:
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                
-                if info:
-                    expected_file = channel_dir / f"{video_id}.opus"
-                    file_size = expected_file.stat().st_size if expected_file.exists() else 0
-                    
-                    original_title = self._extract_original_title(info)
-                    info['_original_title'] = original_title
-                    
-                    return {
-                        'video_id': video_id,
-                        'title': original_title,
-                        'file_path': str(expected_file),
-                        'file_size': file_size,
-                        'metadata': info
-                    }
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error downloading {video_id}: {e}")
-            return None
-    
-    def bulk_download_channel(self, channel_url: str, channel_name: str, limit: int = 10) -> List[Dict]:
-        """
-        Download all new videos from a channel using yt-dlp's download archive feature.
-        yt-dlp will automatically skip already downloaded videos.
-        
-        Returns list of downloaded video info dicts.
-        """
-        channel_dir = self.download_path / channel_name
-        channel_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Create download archive file path (tracks already downloaded videos)
-        archive_file = channel_dir / f"{channel_name}{DOWNLOAD_ARCHIVE_SUFFIX}"
-        
-        # Configure options for this channel
-        opts = self.bulk_download_opts.copy()
-        opts['download_archive'] = str(archive_file)
-        opts['outtmpl'] = str(channel_dir / '%(id)s.%(ext)s')
-        opts['playlistend'] = limit  # Limit number of videos to download
-        
-        # Ensure we're downloading from videos tab
-        if not channel_url.endswith('/videos'):
-            if '/videos' not in channel_url:
-                channel_url = channel_url.rstrip('/') + '/videos'
-        
-        downloaded_videos = []
-        
-        try:
-            logger.info(f"🚀 Starting bulk download for channel: {channel_name}")
-            
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                # yt-dlp will automatically skip videos already in the archive
-                info = ydl.extract_info(channel_url, download=True)
-                
-                if info and 'entries' in info:
-                    for entry in info['entries']:
-                        if entry and entry.get('id'):
-                            video_id = entry['id']
-                            expected_file = channel_dir / f"{video_id}.opus"
-                            
-                            if expected_file.exists():
-                                # File was downloaded in this session
-                                file_size = expected_file.stat().st_size
-                                
-                                downloaded_videos.append({
-                                    'video_id': video_id,
-                                    'title': entry.get('title', 'Unknown'),
-                                    'file_path': str(expected_file),
-                                    'file_size': file_size,
-                                    'metadata': entry
-                                })
-                                
-                                logger.debug(f"✅ Downloaded in bulk: {entry.get('title', video_id)}")
-                            else:
-                                logger.debug(f"⏭️ Skipped (already downloaded): {video_id}")
-                
-                logger.info(f"📦 Bulk download completed for {channel_name}: {len(downloaded_videos)} new videos")
-                
-        except Exception as e:
-            logger.error(f"Error in bulk download for {channel_name}: {e}")
-        
-        return downloaded_videos
+# Backward-compatible alias kept for any code that still references
+# YouTubeDownloader directly.  New code should use YtDlpClient.
+YouTubeDownloader = YtDlpClient
 
 # Thread worker function
 def worker_thread():
@@ -271,7 +83,7 @@ def worker_thread():
     try:
         # Initialize downloader in this thread
         cookies_file = settings.COOKIES_FILE if hasattr(settings, 'COOKIES_FILE') else None
-        downloader = YouTubeDownloader(settings.DOWNLOAD_PATH, cookies_file)
+        downloader = YtDlpClient(settings.DOWNLOAD_PATH, cookies_file)
         
         while True:
             try:
@@ -408,102 +220,169 @@ async def async_scan(downloader):
         raise
 
 async def scan_channel_sync(downloader, channel):
-    """Scan a single channel (runs downloader in thread)"""
+    """Scan a single channel (runs downloader in thread).
+
+    Reads ``include_videos`` and ``include_streams`` from the channel document.
+    ``include_videos`` defaults to ``True`` and ``include_streams`` defaults to
+    ``False`` when the fields are absent, preserving backward compatibility.
+    For each enabled tab the function:
+      1. Bulk-downloads new audio via yt-dlp (archive-based deduplication).
+      2. Fetches full metadata for every newly downloaded video.
+      3. Upserts the video record in the DB.
+
+    Channel document example::
+
+        {
+          "url": "https://www.youtube.com/@ExampleChannel",
+          "active": true,
+          "include_videos": true,
+          "include_streams": false
+        }
+    """
     global scan_should_stop, metrics
-    
+
     db = get_database()
-    
+
     channel_name_raw = channel.get('name') or channel.get('channel_id') or 'Unknown'
     channel_name = sanitize_filename(channel_name_raw)
-    
+
     logger.info(f"🔍 Scanning channel: {channel_name}")
-    
-    # Get channel info and videos (runs in thread via run_in_executor)
+
+    # --- Determine which tabs to scan (backward-compatible defaults) ---
+    include_videos: bool = channel.get('include_videos', True)
+    include_streams: bool = channel.get('include_streams', False)
+
+    tabs_to_scan: List[str] = []
+    if include_videos:
+        tabs_to_scan.append('videos')
+    if include_streams:
+        tabs_to_scan.append('streams')
+
+    if not tabs_to_scan:
+        logger.warning(
+            f"⚠️ Channel '{channel_name}' has both include_videos and include_streams "
+            "disabled – skipping yt-dlp calls."
+        )
+        await db.channels.update_one(
+            {"_id": channel['_id']},
+            {"$set": {"last_scan": datetime.utcnow()}}
+        )
+        metrics['channels_scanned'] += 1
+        return
+
     loop = asyncio.get_event_loop()
-    channel_info, videos = await loop.run_in_executor(
-        None,
-        downloader.get_channel_videos,
-        channel['url'],
-        10
-    )
-    
-    if scan_should_stop:
-        logger.info(f"Scan stopped during channel {channel_name}")
-        return
-    
-    if not channel_info:
-        logger.warning(f"No channel info returned for {channel_name}")
-        return
-    
-    # Update channel info in DB
-    await update_channel_info_db(db, channel, channel_info)
-    
-    # Bulk download new videos (yt-dlp handles duplicate detection)
-    logger.info(f"📥 Starting bulk download for {channel_name}...")
-    
-    downloaded_videos = await loop.run_in_executor(
-        None,
-        downloader.bulk_download_channel,
-        channel['url'],
-        channel_name,
-        10  # Max 10 videos per channel scan
-    )
-    
-    if not downloaded_videos:
-        logger.info(f"No new videos downloaded for {channel_name}")
-    else:
-        logger.info(f"Downloaded {len(downloaded_videos)} new videos for {channel_name}")
-        
-        # Process each downloaded video
-        for video_result in downloaded_videos:
-            try:
-                video_id = video_result['video_id']
-                
-                # Get full metadata for the downloaded video
-                full_metadata = await loop.run_in_executor(
-                    None,
-                    downloader.get_video_metadata,
-                    video_id
-                )
-                
-                # Create video info dict for database
-                video_info = {
-                    'id': video_id,
-                    'title': video_result['title'],
-                    'duration': full_metadata.get('duration') if full_metadata else None,
-                    'upload_date': full_metadata.get('upload_date') if full_metadata else None,
-                    'timestamp': full_metadata.get('timestamp') if full_metadata else None,
-                    'view_count': full_metadata.get('view_count') if full_metadata else None,
-                    'channel': channel_name,
-                    'channel_id': channel.get('channel_id'),
-                }
-                
-                # Save to database
-                await save_video_metadata_db(
-                    db,
-                    video_info=video_info,
-                    channel=channel,
-                    downloaded=True,
-                    file_path=video_result['file_path'],
-                    file_size=video_result['file_size'],
-                    full_metadata=full_metadata or video_result['metadata']
-                )
-                
-                metrics['videos_downloaded'] += 1
-                metrics['total_download_size'] += video_result['file_size']
-                
-                logger.info(f"✅ Processed: {video_result['title']} ({video_result['file_size'] / 1024 / 1024:.1f} MB)")
-                
-            except Exception as e:
-                logger.error(f"Error processing downloaded video {video_result.get('video_id')}: {e}")
-                metrics['download_errors'] += 1
-    
+
+    # In-memory set for deduplication within this run (across tabs).
+    processed_video_ids: set = set()
+
+    # Track whether we have updated channel info yet (prefer videos tab).
+    channel_info_updated = False
+
+    for tab in tabs_to_scan:
+        if scan_should_stop:
+            logger.info(f"Scan stopped during channel {channel_name}")
+            return
+
+        source_url = build_channel_tab_url(channel['url'], tab)
+        logger.info(f"📡 Scanning tab '{tab}' for {channel_name}: {source_url}")
+
+        # --- Fetch channel metadata (once, from first available tab) ---
+        if not channel_info_updated:
+            channel_info, _ = await loop.run_in_executor(
+                None,
+                downloader.get_channel_entries,
+                source_url,
+                10,
+            )
+
+            if scan_should_stop:
+                logger.info(f"Scan stopped during channel {channel_name}")
+                return
+
+            if channel_info:
+                await update_channel_info_db(db, channel, channel_info)
+                channel_info_updated = True
+            else:
+                logger.warning(f"No channel info returned for {channel_name} (tab: {tab})")
+
+        # --- Bulk download new content for this tab ---
+        logger.info(f"📥 Starting bulk download for {channel_name} [{tab}]…")
+
+        downloaded_videos = await loop.run_in_executor(
+            None,
+            downloader.bulk_download_channel_tab,
+            source_url,
+            channel_name,
+            10,  # Max 10 videos per tab per scan
+        )
+
+        if not downloaded_videos:
+            logger.info(f"No new videos downloaded for {channel_name} [{tab}]")
+        else:
+            logger.info(
+                f"Downloaded {len(downloaded_videos)} new videos for {channel_name} [{tab}]"
+            )
+
+            for video_result in downloaded_videos:
+                try:
+                    video_id = video_result['video_id']
+
+                    # Skip if already processed in this run (other tab)
+                    if video_id in processed_video_ids:
+                        logger.debug(f"⏭️ Dedup skip (already processed this run): {video_id}")
+                        continue
+                    processed_video_ids.add(video_id)
+
+                    # Get full metadata for the downloaded video
+                    full_metadata = await loop.run_in_executor(
+                        None,
+                        downloader.get_video_metadata,
+                        video_id,
+                    )
+
+                    # Create video info dict for database
+                    video_info = {
+                        'id': video_id,
+                        'title': video_result['title'],
+                        'duration': full_metadata.get('duration') if full_metadata else None,
+                        'upload_date': full_metadata.get('upload_date') if full_metadata else None,
+                        'timestamp': full_metadata.get('timestamp') if full_metadata else None,
+                        'view_count': full_metadata.get('view_count') if full_metadata else None,
+                        'channel': channel_name,
+                        'channel_id': channel.get('channel_id'),
+                    }
+
+                    # Save to database
+                    await save_video_metadata_db(
+                        db,
+                        video_info=video_info,
+                        channel=channel,
+                        downloaded=True,
+                        file_path=video_result['file_path'],
+                        file_size=video_result['file_size'],
+                        full_metadata=full_metadata or video_result['metadata'],
+                    )
+
+                    metrics['videos_downloaded'] += 1
+                    metrics['total_download_size'] += video_result['file_size']
+
+                    logger.info(
+                        f"✅ Processed: {video_result['title']} "
+                        f"({video_result['file_size'] / 1024 / 1024:.1f} MB)"
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error processing downloaded video {video_result.get('video_id')}: {e}"
+                    )
+                    metrics['download_errors'] += 1
+
     # Update last scan timestamp
     await db.channels.update_one(
         {"_id": channel['_id']},
         {"$set": {"last_scan": datetime.utcnow()}}
     )
-    
+
     metrics['channels_scanned'] += 1
 
 async def update_channel_info_db(db, db_channel: Dict, yt_channel_info: Dict):
